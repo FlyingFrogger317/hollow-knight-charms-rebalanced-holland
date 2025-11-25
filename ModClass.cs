@@ -1,13 +1,8 @@
 ﻿using Modding;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.EnterpriseServices;
 using UnityEngine;
 using System.Linq;
-using System.Runtime.Remoting.Messaging;
-using System.Runtime.CompilerServices;
-using Mono.Cecil;
 
 namespace CharmsRebalanced
 {
@@ -30,6 +25,11 @@ namespace CharmsRebalanced
             ModHooks.CharmUpdateHook += (PlayerData data, HeroController controller) =>
             {
                 RunHandlers(UsableHook.CharmUpdate, data, controller);
+            };
+            ModHooks.SoulGainHook += soul =>
+            {
+                int? retVal = RunHandlers<int?>(UsableHook.SoulGain, soul);
+                return retVal ?? soul;
             };
         }
         readonly static Dictionary<int, string> charmNames = new Dictionary<int, string>
@@ -77,7 +77,9 @@ namespace CharmsRebalanced
         };
         static Dictionary<string, int> charmCostChange = new Dictionary<string, int>
         {
-            { "lifeblood_heart", -1 }
+            { "lifeblood_heart", -1 },
+            { "soul_catcher", -1 },
+            { "soul_eater",-1 }
         };
         static Dictionary<string, int> charmInts = charmNames.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
         private int OnPlayerDataGetInt(string field, int orig)
@@ -94,9 +96,16 @@ namespace CharmsRebalanced
         }
         private bool HasCharm(string charmName)
         {
+            bool invert = false;
+            if (charmName[0] == '!')
+            {
+                charmName = charmName.Substring(1);
+                invert = true;
+            }
             int charmInt = charmInts[charmName];
             string identifier = "equippedCharm_" + charmInt.ToString();
-            return PlayerData.instance.GetBool(identifier);
+            bool hasCharm = PlayerData.instance.GetBool(identifier);
+            return invert ? hasCharm : !hasCharm;
         }
         //handle registerable callbacks
 #nullable enable
@@ -132,7 +141,8 @@ namespace CharmsRebalanced
         }
         public enum UsableHook
         {
-            CharmUpdate
+            CharmUpdate,
+            SoulGain
         }
         private class HandlerList : List<(string[], CharmHandler)> { };
         private Dictionary<UsableHook, HandlerList> RegisteredHandlers = Enum.GetValues(typeof(UsableHook)).Cast<UsableHook>().ToDictionary(hook => hook, hook => new HandlerList());
@@ -145,9 +155,26 @@ namespace CharmsRebalanced
             RegisteredHandlers[hook].Add((charms, handler));
         }
 #nullable disable
-        void CreateCharmMods()
+        internal void CreateCharmMods()
         {
-            
+            RegisterCharmHandler(UsableHook.SoulGain, ["soul_catcher", "!soul_eater"], args =>
+            {
+                int addSoul = (int)(args[0]);
+                addSoul--;
+                return addSoul;
+            });
+            RegisterCharmHandler(UsableHook.SoulGain, ["soul_eater", "!soul_catcher"], args =>
+            {
+                int addSoul = (int)(args[0]);
+                addSoul -= 2;
+                return addSoul;
+            });
+            RegisterCharmHandler(UsableHook.SoulGain, ["soul_eater","soul_catcher"], args =>
+            {
+                int addSoul = (int)(args[0]);
+                addSoul -= 3;
+                return addSoul;
+            });
         }
     }
 }
