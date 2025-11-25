@@ -1,0 +1,53 @@
+{
+  "format": 1,
+  "restore": {
+    "/home/anthony/programming/personal/hkmod/hollow-knight-charms-rebalanced-holland/charmsRebalanced.csproj": {}
+  },
+  "projects": {
+    "/home/anthony/programming/personal/hkmod/hollow-knight-charms-rebalanced-holland/charmsRebalanced.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/anthony/programming/personal/hkmod/hollow-knight-charms-rebalanced-holland/charmsRebalanced.csproj",
+        "projectName": "CharmsRebalanced",
+        "projectPath": "/home/anthony/programming/personal/hkmod/hollow-knight-charms-rebalanced-holland/charmsRebalanced.csproj",
+        "packagesPath": "/home/anthony/.nuget/packages/",
+        "outputPath": "/home/anthony/programming/personal/hkmod/hollow-knight-charms-rebalanced-holland/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/anthony/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net472"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net472": {
+            "targetAlias": "net472",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net472": {
+          "targetAlias": "net472",
+          "dependencies": {
+            "Microsoft.NETFramework.ReferenceAssemblies": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[1.0.2, )",
+              "autoReferenced": true
+            }
+          },
+          "runtimeIdentifierGraphPath": "/home/anthony/dotnet/sdk/6.0.427/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
