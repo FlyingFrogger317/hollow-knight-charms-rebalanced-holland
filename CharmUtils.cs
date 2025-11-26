@@ -1,15 +1,39 @@
+using System.Collections.Generic;
+using System.Linq;
 namespace CharmsRebalanced
 {
     public static class CharmUtils
     {
         public static CharmData GetCharm(int charmId)
         {
-            return new CharmData(charmId);
+            return new CharmData(charmNames[charmId]);
         }
 
         public static CharmData GetCharm(string charmName)
         {
-            return new CharmData(charmInts[charmName]);
+            return new CharmData(charmName);
+        }
+        public static CharmData[] GetCharmsIfEquippedOrNot(params string[] charmNames)
+        {
+            List<CharmData> equippedCharms = new List<CharmData>();
+            foreach (string charmName in charmNames)
+            {
+                if (charmName[0] == '!')
+                {
+                    CharmData charmDataNeg = GetCharm(charmName.Substring(1));
+                    if (!charmDataNeg.equipped)
+                    {
+                        equippedCharms.Add(charmDataNeg);
+                    }
+                    continue;
+                }
+                CharmData charmData = GetCharm(charmName);
+                if (charmData.equipped)
+                {
+                    equippedCharms.Add(charmData);
+                }
+            }
+            return equippedCharms.ToArray();
         }
         readonly private static Dictionary<int, string> charmNames = new Dictionary<int, string>
         {
@@ -61,15 +85,22 @@ namespace CharmsRebalanced
             { "soul_eater",-1 }
         };
         private static Dictionary<string, int> charmInts = charmNames.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
-    }
-    private class CharmData
-    {
-        public int charmId;
-        public int costChange => CharmUtils.charmCostChange.TryGetValue(charmName, out int change) ? change : 0;
-        public string charmName => CharmUtils.GetCharm(charmId);
-        public CharmData(int charmId)
+        public class CharmData
         {
-            this.charmId = charmId;
+            public int charmId => charmInts[charmName];
+            public int costChange => CharmUtils.charmCostChange.TryGetValue(charmName, out int change) ? change : 0;
+            public string charmName;
+            internal CharmData(string charmName)
+            {
+                this.charmName = charmName;
+            }
+            public bool equipped
+            {
+                get
+                {
+                    return PlayerData.instance.GetBool($"equippedCharm_{charmId}");
+                }
+            }
         }
     }
 }
