@@ -10,7 +10,7 @@ namespace CharmsRebalanced
     {
         internal static CharmsRebalanced Instance;
         internal static string ModDisplayName = "CharmsRebalanced";
-        internal static string version = "1.0.0.1";
+        internal static string version = "1.0.0.2";
         public CharmsRebalanced() : base(ModDisplayName) { }
         public override string GetVersion()
         {
@@ -113,7 +113,7 @@ namespace CharmsRebalanced
         private delegate object? CharmHandler(object[] args);
         private void RunHandlers(UsableHook hook, params object[] args)
         {
-            RunHandlers(hook, args);
+            RunHandlers<object?>(hook, args);
         }
         private T? RunHandlers<T>(UsableHook hook, params object[] args)
         {
