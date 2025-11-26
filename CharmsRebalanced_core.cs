@@ -3,7 +3,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
-
+using CharmsRebalanced.CharmMods;
+using CharmsRebalanced.CharmUtils;
 namespace CharmsRebalanced
 {
     public class CharmsRebalanced : Mod
@@ -32,56 +33,6 @@ namespace CharmsRebalanced
                 return retVal ?? soul;
             };
         }
-        readonly static Dictionary<int, string> charmNames = new Dictionary<int, string>
-        {
-            { 1, "swarm" },
-            { 2, "compass" },//no changes
-            { 3, "grubsong" },
-            { 4, "stalwart" },
-            { 5, "baldur" },
-            { 6, "fury" },
-            { 7, "quick_focus" },
-            { 8, "lifeblood_heart" },
-            { 9, "lifeblood_core" },
-            { 10, "crest" },
-            { 11, "flukenest" },
-            { 12, "thorns" },
-            { 13, "mark_of_pride" },
-            { 14, "steady_body" },
-            { 15, "heavy_blow" },
-            { 16, "sharp_shadow" },
-            { 17, "spore_shroom" },
-            { 18, "longnail" },
-            { 19, "shaman_stone" },
-            { 20, "soul_catcher" },//done
-            { 21, "soul_eater" },//done
-            { 22, "glowing_womb" },
-            { 23, "fragile_heart" },
-            { 24, "fragile_greed" },
-            { 25, "fragile_strength" },
-            { 26, "nailmasters_glory" },//no changes
-            { 27, "jonis_blessing" },
-            { 28, "shape_of_unn" },
-            { 29, "hiveblood" },
-            { 30, "dream_wielder" },
-            { 31, "dashmaster" },
-            { 32, "quick_slash" },
-            { 33, "spell_twister" },
-            { 34, "deep_focus" },
-            { 35, "grubberflys_elegy" },
-            { 36, "kingsoul" },// figure out how to deal with voidsoul being an extension of void heart and being unable to equip
-            { 37, "sprintmaster" },
-            { 38, "dreamshield" },
-            { 39, "weaversong" },
-            { 40, "grimmchild" }
-        };
-        static Dictionary<string, int> charmCostChange = new Dictionary<string, int>
-        {
-            { "lifeblood_heart", -1 },
-            { "soul_catcher", -1 },
-            { "soul_eater",-1 }
-        };
-        static Dictionary<string, int> charmInts = charmNames.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
         private int OnPlayerDataGetInt(string field, int orig)
         {
             if (field.StartsWith("charmCost_"))
@@ -143,7 +94,8 @@ namespace CharmsRebalanced
         public enum UsableHook
         {
             CharmUpdate,
-            SoulGain
+            SoulGain,
+            Initialize
         }
         private class HandlerList : List<(string[], CharmHandler)> { };
         private Dictionary<UsableHook, HandlerList> RegisteredHandlers = Enum.GetValues(typeof(UsableHook)).Cast<UsableHook>().ToDictionary(hook => hook, hook => new HandlerList());
