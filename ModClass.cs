@@ -53,13 +53,13 @@ namespace CharmsRebalanced
             { 17, "spore_shroom" },
             { 18, "longnail" },
             { 19, "shaman_stone" },
-            { 20, "soul_catcher" },
-            { 21, "soul_eater" },
+            { 20, "soul_catcher" },//done
+            { 21, "soul_eater" },//done
             { 22, "glowing_womb" },
             { 23, "fragile_heart" },
             { 24, "fragile_greed" },
             { 25, "fragile_strength" },
-            { 26, "nailmasters_glory" },
+            { 26, "nailmasters_glory" },//no changes
             { 27, "jonis_blessing" },
             { 28, "shape_of_unn" },
             { 29, "hiveblood" },
@@ -69,7 +69,7 @@ namespace CharmsRebalanced
             { 33, "spell_twister" },
             { 34, "deep_focus" },
             { 35, "grubberflys_elegy" },
-            { 36, "kingsoul" },
+            { 36, "kingsoul" },// figure out how to deal with voidsoul being an extension of void heart and being unable to equip
             { 37, "sprintmaster" },
             { 38, "dreamshield" },
             { 39, "weaversong" },
