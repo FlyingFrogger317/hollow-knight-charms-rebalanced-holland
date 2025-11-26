@@ -103,9 +103,10 @@ namespace CharmsRebalanced
                 invert = true;
             }
             int charmInt = charmInts[charmName];
+
             string identifier = "equippedCharm_" + charmInt.ToString();
             bool hasCharm = PlayerData.instance.GetBool(identifier);
-            return invert ? hasCharm : !hasCharm;
+            return invert ? !hasCharm : hasCharm;
         }
         //handle registerable callbacks
 #nullable enable
