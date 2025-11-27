@@ -538,8 +538,17 @@ namespace CharmsRebalanced
                                 builders[sub] = subBuilder;
 
                                 // Button added to parent, but no screen yet
-                                currentBuilder.AddButton(sub.title, sub.description,
-                                    () => UIManager.instance.UIGoToDynamicMenu(screens[sub]));
+                                currentBuilder.AddButton(sub.title, sub.description, () =>
+                                {
+                                    // If BFS hasn’t created the screen yet, create it now.
+                                    if (!screens.TryGetValue(sub, out var scr) || scr == null)
+                                    {
+                                        scr = builders[sub].CreateMenuScreen();
+                                        screens[sub] = scr;
+                                    }
+
+                                    UIManager.instance.UIGoToDynamicMenu(scr);
+                                });
 
                                 // Schedule building children builders
                                 q.Enqueue((subBuilder, sub.items));
