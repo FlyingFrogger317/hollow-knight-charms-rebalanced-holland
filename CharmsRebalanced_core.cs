@@ -493,31 +493,57 @@ namespace CharmsRebalanced
                                     Values = opt.values,
                                     Loader = () =>
                                     {
-                                        string[] path = opt.id.ToArray();
-                                        object obj = settingsInstance;
-                                        Type type = obj.GetType();
-                                        string leaf = path[path.Length - 1];
-                                        for (int i = 0; i < path.Length - 1; i++)
+                                        var parts = opt.id;
+                                        object current = settingsInstance;
+                                        for (int i = 0; i < parts.Length; i++)
                                         {
-                                            var p = type.GetProperty(path[i]);
-                                            obj = p.GetValue(obj);
-                                            type = obj.GetType();
+                                            string key = parts[i];
+                                            bool isLeaf = (i == parts.Length - 1);
+
+                                            if (!isLeaf)
+                                            {
+                                                var prop = current.GetType().GetProperty(key);
+                                                current = prop.GetValue(current);
+                                            }
+                                            else
+                                            {
+                                                if (current is IDictionary<string,int> dict)
+                                                {
+                                                    return dict.TryGetValue(key, out int v) ? v : 0;
+                                                }
+                                                var prop = current.GetType().GetProperty(key);
+                                                return prop != null ? (int)prop.GetValue(current) : 0;
+                                            }
                                         }
-                                        return (int)type.GetProperty(leaf).GetValue(obj);
+                                        return 0;
                                     },
+
                                     Saver = (int index) =>
                                     {
-                                        string[] path = opt.id.ToArray();
-                                        object obj = settingsInstance;
-                                        Type type = obj.GetType();
-                                        string leaf = path[path.Length - 1];
-                                        for (int i = 0; i < path.Length - 1; i++)
+                                        var parts = opt.id;
+                                        object current = settingsInstance;
+                                        for (int i = 0; i < parts.Length; i++)
                                         {
-                                            var p = type.GetProperty(path[i]);
-                                            obj = p.GetValue(obj);
-                                            type = obj.GetType();
+                                            string key = parts[i];
+                                            bool isLeaf = i == parts.Length - 1;
+                                            if (!isLeaf)
+                                            {
+                                                var prop = current.GetType().GetProperty(key);
+                                                current = prop.GetValue(current);
+                                            }
+                                            else
+                                            {
+                                                if (current is IDictionary<string,int> dict)
+                                                {
+                                                    dict[key] = index;
+                                                }
+                                                else
+                                                {
+                                                    var prop = current.GetType().GetProperty(key);
+                                                    prop?.SetValue(current, index);
+                                                }
+                                            }
                                         }
-                                        type.GetProperty(leaf).SetValue(obj, index);
                                     }
                                 });
                             }
