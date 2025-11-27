@@ -10,7 +10,7 @@ namespace CharmsRebalanced
     {
         internal static CharmsRebalanced Instance;
         internal static string ModDisplayName = "CharmsRebalanced";
-        internal static string version = "1.0.0.6";
+        internal static string version = "1.0.0.7";
         public CharmsRebalanced() : base(ModDisplayName) { }
         public override string GetVersion()
         {
