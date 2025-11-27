@@ -6,11 +6,11 @@ using UnityEngine;
 using System.Linq;
 namespace CharmsRebalanced
 {
-    public class CharmsRebalanced : Mod, ITogglableMod
+    public class CharmsRebalanced : Mod, ITogglableMod, ICustomMenuMod
     {
         internal static CharmsRebalanced Instance;
         internal static string ModDisplayName = "CharmsRebalanced";
-        internal static string version = "1.0.0.3";
+        internal static string version = "1.0.0.6";
         public CharmsRebalanced() : base(ModDisplayName) { }
         public override string GetVersion()
         {
@@ -79,6 +79,60 @@ namespace CharmsRebalanced
             UsedHooks.UnregisterAllHooks();
             ILHooks.DisableAll();
         }
+        public static class Config
+        {
+            public static bool ExampleOption { get {
+                return _Config.GlobalSettings.ExampleOption == 0;
+            } }
+            public static class _Config
+            {
+                public class GlobalSettings
+                {
+                    public static int ExampleOption { get; set; } = 0;
+                }
+                static List<(string, string, string[], string)> options = new()
+                {
+                    ("Example Option", "An example configuration option.", new string[] { "True", "False" }, "ExampleOption")
+                };
+                static public void CreateEntries(Modmenus.ModMenuScreenBuilder builder)
+                {
+                    var settings=typeof(GlobalSettings);
+                    foreach (var (name, description, values, id) in options)
+                    {
+                        builder.AddHorizontalOption(new IMenuMod.MenuEntry
+                        {
+                            Name = name,
+                            Description = description,
+                            Values = values,
+                            Saver = (int val) =>
+                            {
+                                settings.GetProperty(id).SetValue(null, val);
+                            },
+                            Loader = () =>
+                            {
+                                return (int)settings.GetProperty(id).GetValue(null);
+                            }
+                        });
+                    }
+                }
+            }
+        }
+        
+        public MenuScreen GetMenuScreen(MenuScreen modListMenu, ModToggleDelegates? toggleDelegates)
+        {
+            Modmenus.ModMenuScreenBuilder builder = new Modmenus.ModMenuScreenBuilder(ModDisplayName, modListMenu);
+            builder.AddHorizontalOption(new IMenuMod.MenuEntry
+            {
+                Name = "Enabled",
+                Description = "Whether the mod is enabled or not.",
+                Values = new string[] { "True", "False" },
+                Saver = (int val) => { toggleDelegates?.SetModEnabled(val == 0); },
+                Loader = () => (bool)(toggleDelegates?.GetModEnabled()) ? 0 : 1
+            });
+            Config._Config.CreateEntries(builder);
+            return builder.CreateMenuScreen();
+        }
+        public bool ToggleButtonInsideMenu => true;
         private int OnPlayerDataGetInt(string field, int orig)
         {
             if (field.StartsWith("charmCost_"))
