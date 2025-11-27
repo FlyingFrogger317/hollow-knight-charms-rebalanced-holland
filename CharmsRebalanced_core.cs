@@ -4,14 +4,13 @@ using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
 using System.Linq;
-using HutongGames.PlayMaker.Actions;
 namespace CharmsRebalanced
 {
     public class CharmsRebalanced : Mod, ITogglableMod, ICustomMenuMod, IGlobalSettings<CharmsRebalanced.Config._Config.GlobalSettings>, ILocalSettings<CharmsRebalanced.SaveModSettings>
     {
         internal static CharmsRebalanced Instance;
         internal static string ModDisplayName = "Charms Rebalanced";
-        internal static string version = "1.0.0.9";
+        internal static string version = "1.0.1.4";
         public CharmsRebalanced() : base(ModDisplayName) { }
         public override string GetVersion()
         {
@@ -473,14 +472,15 @@ namespace CharmsRebalanced
                     Dictionary<Submenu, Modmenus.ModMenuScreenBuilder> builders = new();
                     Dictionary<Submenu, MenuScreen> screens = new();
 
-                    Queue<(Modmenus.ModMenuScreenBuilder parentBuilder, List<ScreenItem> items, MenuScreen parentScreen)> q =
-                        new Queue<(Modmenus.ModMenuScreenBuilder, List<ScreenItem>, MenuScreen)>();
+                    // --- PASS 1: Build builder tree only (NO SCREEN CREATION) ---
+                    Queue<(Modmenus.ModMenuScreenBuilder parentBuilder, List<ScreenItem> items)> q =
+                        new Queue<(Modmenus.ModMenuScreenBuilder, List<ScreenItem>)>();
 
-                    q.Enqueue((rootBuilder, screenItems, rootBuilder.menuBuilder.Screen));
+                    q.Enqueue((rootBuilder, screenItems));
 
                     while (q.Count > 0)
                     {
-                        var (currentBuilder, items, parentScreen) = q.Dequeue();
+                        var (currentBuilder, items) = q.Dequeue();
 
                         foreach (var item in items)
                         {
@@ -491,78 +491,64 @@ namespace CharmsRebalanced
                                     Name = opt.title,
                                     Description = opt.description,
                                     Values = opt.values,
+
                                     Loader = () =>
                                     {
-                                        var parts = opt.id;
-                                        object current = settingsInstance;
-                                        for (int i = 0; i < parts.Length; i++)
-                                        {
-                                            string key = parts[i];
-                                            bool isLeaf = (i == parts.Length - 1);
+                                        string[] parts = opt.id.ToArray();
 
-                                            if (!isLeaf)
-                                            {
-                                                var prop = current.GetType().GetProperty(key);
-                                                current = prop.GetValue(current);
-                                            }
-                                            else
-                                            {
-                                                if (current is IDictionary<string,int> dict)
-                                                {
-                                                    return dict.TryGetValue(key, out int v) ? v : 0;
-                                                }
-                                                var prop = current.GetType().GetProperty(key);
-                                                return prop != null ? (int)prop.GetValue(current) : 0;
-                                            }
+                                        if (parts.Length == 1)
+                                        {
+                                            var prop = settingsInstance.GetType().GetProperty(parts[0]);
+                                            return (int)(prop?.GetValue(settingsInstance) ?? 0);
                                         }
+
+                                        if (parts.Length == 2 && parts[0] == "patchesEnabled")
+                                        {
+                                            string key = parts[1];
+                                            return settingsInstance.patchesEnabled.TryGetValue(key, out int v) ? v : 0;
+                                        }
+
                                         return 0;
                                     },
 
                                     Saver = (int index) =>
                                     {
-                                        var parts = opt.id;
-                                        object current = settingsInstance;
-                                        for (int i = 0; i < parts.Length; i++)
+                                        string[] parts = opt.id.ToArray();
+
+                                        if (parts.Length == 1)
                                         {
-                                            string key = parts[i];
-                                            bool isLeaf = i == parts.Length - 1;
-                                            if (!isLeaf)
-                                            {
-                                                var prop = current.GetType().GetProperty(key);
-                                                current = prop.GetValue(current);
-                                            }
-                                            else
-                                            {
-                                                if (current is IDictionary<string,int> dict)
-                                                {
-                                                    dict[key] = index;
-                                                }
-                                                else
-                                                {
-                                                    var prop = current.GetType().GetProperty(key);
-                                                    prop?.SetValue(current, index);
-                                                }
-                                            }
+                                            var prop = settingsInstance.GetType().GetProperty(parts[0]);
+                                            prop?.SetValue(settingsInstance, index);
+                                            return;
+                                        }
+
+                                        if (parts.Length == 2 && parts[0] == "patchesEnabled")
+                                        {
+                                            string key = parts[1];
+                                            settingsInstance.patchesEnabled[key] = index;
+                                            return;
                                         }
                                     }
                                 });
                             }
                             else if (item is Submenu sub)
                             {
+                                // Create ONLY the builder, no screens yet
                                 var subBuilder = new Modmenus.ModMenuScreenBuilder(sub.title, null);
                                 builders[sub] = subBuilder;
 
-                                currentBuilder.AddButton(sub.title, sub.description, () =>
-                                {
-                                    UIManager.instance.UIGoToDynamicMenu(screens[sub]);
-                                });
+                                // Button added to parent, but no screen yet
+                                currentBuilder.AddButton(sub.title, sub.description,
+                                    () => UIManager.instance.UIGoToDynamicMenu(screens[sub]));
 
-                                q.Enqueue((subBuilder, sub.items, null));
+                                // Schedule building children builders
+                                q.Enqueue((subBuilder, sub.items));
                             }
                         }
                     }
 
-                    MenuScreen rootScreen = rootBuilder.CreateMenuScreen();
+                    // --- PASS 2: Now that the tree is built, create screens BFS in correct order ---
+                    var rootScreen = rootBuilder.CreateMenuScreen();
 
                     Queue<(Submenu sub, MenuScreen parent)> q2 = new();
                     foreach (var kv in builders)
@@ -570,9 +556,12 @@ namespace CharmsRebalanced
 
                     while (q2.Count > 0)
                     {
-                        var (sub, parent) = q2.Dequeue();
+                        var (sub, parentScreen) = q2.Dequeue();
                         var subBuilder = builders[sub];
-                        subBuilder.returnScreen = parent;
+
+                        // Correct parent given *at construction time*
+                        subBuilder.returnScreen = parentScreen;
+
                         var screen = subBuilder.CreateMenuScreen();
                         screens[sub] = screen;
 
