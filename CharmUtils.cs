@@ -13,13 +13,10 @@ namespace CharmsRebalanced
         {
             return new CharmData(charmName);
         }
-        public static string[] ListAllCharmNames()
-        {
-            return charmNames.Values.ToArray();
-        }
         public static CharmData GetExtraCharmData(string charmName)
         {
             bool inverted = false;
+            CharmData retval = null;
             if (charmName[0] == '!')
             {
                 charmName = charmName.Substring(1);
@@ -33,56 +30,93 @@ namespace CharmsRebalanced
                     {
                         data = new CharmData("grimmchild");
                         data.charmName = "carefree_melody";
-                        return data;
+                        retval = data;
+                        break;
                     }
-                    return new CharmData();
+                    retval = new CharmData();
+                    break;
                 case "grimmchild_0":
                     if (PlayerData.instance.grimmChildLevel == 1)
                     {
                         data = new CharmData("grimmchild");
                         data.charmName = "grimmchild_0";
-                        return data;
+                        retval = data;
+                        break;
                     }
-                    return new CharmData();
+                    retval = new CharmData();
+                    break;
                 case "grimmchild_1":
                     if (PlayerData.instance.grimmChildLevel == 2)
                     {
                         data = new CharmData("grimmchild");
                         data.charmName = "grimmchild_1";
-                        return data;
+                        retval = data;
+                        break;
                     }
-                    return new CharmData();
+                    retval = new CharmData();
+                    break;
                 case "grimmchild_2":
                     if (PlayerData.instance.grimmChildLevel == 3)
                     {
                         data = new CharmData("grimmchild");
                         data.charmName = "grimmchild_2";
-                        return data;
+                        retval = data;
+                        break;
                     }
-                    return new CharmData();
+                    retval = new CharmData();
+                    break;
                 case "grimmchild_3":
                     if (PlayerData.instance.grimmChildLevel == 4)
                     {
                         data = new CharmData("grimmchild");
                         data.charmName = "grimmchild_3";
-                        return data;
+                        retval = data;
+                        break;
                     }
-                    return new CharmData();
+                    retval = new CharmData();
+                    break;
                 case "kingsoul":
-                    if (PlayerData.instance.royalCharmState==2){
+                    if (PlayerData.instance.royalCharmState == 2)
+                    {
                         data = new CharmData("kingsoul");
-                        return data;
+                        retval = data;
+                        break;
                     }
-                    return new CharmData();
+                    retval = new CharmData();
+                    break;
                 case "void_heart":
-                    if (PlayerData.instance.gotShadeCharm){
+                    if (PlayerData.instance.gotShadeCharm)
+                    {
                         data = new CharmData("kingsoul");
                         data.charmName = "void_heart";
-                        return data;
+                        retval = data;
                     }
-                    return new CharmData();
+                    retval = new CharmData();
+                    break;
+                case "voidsoul":
+                    if (CharmsRebalanced.Instance.saveSettings.radDead)
+                    {
+                        data = new CharmData("kingsoul");
+                        data.charmName = "voidsoul";
+                        retval = data;
+                        break;
+                    }
+                    retval = new CharmData();
+                    break;
                 default:
                     return null;
+            }
+            if (inverted && retval.charmName != "")
+            {
+                return new CharmData();
+            }
+            else if (inverted && retval.charmName == "")
+            {
+                return new CharmData(charmName);
+            }
+            else
+            {
+                return retval;
             }
         }
         public static CharmData[] GetCharmsIfEquippedOrNot(params string[] charmNames)
@@ -97,9 +131,6 @@ namespace CharmsRebalanced
                     {
                         equippedCharms.Add(special);
                     }
-                    continue;
-                } else if (special.charmName == "")
-                {
                     continue;
                 }
                 if (charmName[0] == '!')

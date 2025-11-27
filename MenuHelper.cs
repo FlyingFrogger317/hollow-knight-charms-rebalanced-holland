@@ -149,7 +149,7 @@ namespace Modmenus
     /// </summary>
     public class ModMenuScreenBuilder
     {
-        private MenuScreen returnScreen;
+        public MenuScreen returnScreen;
         private Dictionary<string, MenuScreen> MenuScreens = new();
         public MenuBuilder menuBuilder;
         public MenuButton backButton;
