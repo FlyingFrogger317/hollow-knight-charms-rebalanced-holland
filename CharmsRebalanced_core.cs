@@ -6,10 +6,10 @@ using UnityEngine;
 using System.Linq;
 namespace CharmsRebalanced
 {
-    public class CharmsRebalanced : Mod, ITogglableMod, ICustomMenuMod
+    public class CharmsRebalanced : Mod, ITogglableMod, ICustomMenuMod, IGlobalSettings<CharmsRebalanced.Config._Config.GlobalSettings>
     {
         internal static CharmsRebalanced Instance;
-        internal static string ModDisplayName = "CharmsRebalanced";
+        internal static string ModDisplayName = "Charms Rebalanced";
         internal static string version = "1.0.0.7";
         public CharmsRebalanced() : base(ModDisplayName) { }
         public override string GetVersion()
@@ -73,11 +73,13 @@ namespace CharmsRebalanced
                 return retVal ?? soul;
             });
             ILHooks.EnableAll();
+            Log("Loaded");
         }
         public void Unload()
         {
             UsedHooks.UnregisterAllHooks();
             ILHooks.DisableAll();
+            Log("Unloaded");
         }
         public static class Config
         {
@@ -86,7 +88,7 @@ namespace CharmsRebalanced
             } }
             public static class _Config
             {
-                public class GlobalSettings
+                static public class GlobalSettings
                 {
                     public static int ExampleOption { get; set; } = 0;
                 }
@@ -117,7 +119,14 @@ namespace CharmsRebalanced
                 }
             }
         }
-        
+        public void OnLoadGlobal(CharmsRebalanced.Config._Config.GlobalSettings s)
+        {
+            CharmsRebalanced.Config._Config.GlobalSettings = s;
+        }
+        public CharmsRebalanced.Config._Config.GlobalSettings OnSaveGlobal()
+        {
+            return CharmsRebalanced.Config._Config.GlobalSettings;
+        }
         public MenuScreen GetMenuScreen(MenuScreen modListMenu, ModToggleDelegates? toggleDelegates)
         {
             Modmenus.ModMenuScreenBuilder builder = new Modmenus.ModMenuScreenBuilder(ModDisplayName, modListMenu);
