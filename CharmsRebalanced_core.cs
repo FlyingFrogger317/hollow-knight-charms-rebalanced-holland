@@ -110,10 +110,24 @@ namespace CharmsRebalanced
                     return _Config.settingsInstance.ExampleOption == 0;
                 }
             }
-            public static Dictionary<string, int> PatchesEnabled
+            public static Dictionary<string, bool> PatchesEnabled
             {
-                get => _Config.settingsInstance.patchesEnabled;
-                set => _Config.settingsInstance.patchesEnabled = value;
+                get
+                {
+                    return _Config.settingsInstance.patchesEnabled
+                        .ToDictionary(
+                            kv => kv.Key,
+                            kv => kv.Value == 1
+                        );
+                }
+
+                set
+                {
+                    foreach (var kv in value)
+                    {
+                        _Config.settingsInstance.patchesEnabled[kv.Key] = kv.Value ? 1 : 0;
+                    }
+                }
             }
             public static class _Config
             {
@@ -162,7 +176,8 @@ namespace CharmsRebalanced
                         { "dreamshield", 1 },
                         { "weaversong", 1 },
                         { "grimmchild", 1 },
-                        { "voidsoul", 1 }
+                        { "voidsoul", 1 },
+                        { "carefree_melody",1}
                     };
                 }
                 static public GlobalSettings settingsInstance = new GlobalSettings();
@@ -275,7 +290,7 @@ namespace CharmsRebalanced
             AddPatch(b, "Quick Slash Patch", "quick_slash");
             AddPatch(b, "Longnail Patch", "longnail");
             AddPatch(b, "Mark of Pride Patch", "mark_of_pride");
-            AddPatch(b, "Fury of the Fallen Patch", "fury_of_the_fallen");
+            AddPatch(b, "Fury of the Fallen Patch", "fury");
 
             return b.CreateMenuScreen();
         }
@@ -283,10 +298,10 @@ namespace CharmsRebalanced
         {
             var b = new Modmenus.ModMenuScreenBuilder("Charm Row 3", parent);
 
-            AddPatch(b, "Thorns of Agony Patch", "thorns_of_agony");
-            AddPatch(b, "Baldur Shell Patch", "baldur_shell");
+            AddPatch(b, "Thorns of Agony Patch", "thorns");
+            AddPatch(b, "Baldur Shell Patch", "baldur");
             AddPatch(b, "Flukenest Patch", "flukenest");
-            AddPatch(b, "Defender's Crest Patch", "defenders_crest");
+            AddPatch(b, "Defender's Crest Patch", "crest");
             AddPatch(b, "Glowing Womb Patch", "glowing_womb");
             AddPatch(b, "Quick Focus Patch", "quick_focus");
             AddPatch(b, "Deep Focus Patch", "deep_focus");

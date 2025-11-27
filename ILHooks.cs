@@ -38,7 +38,7 @@ namespace CharmsRebalanced
             }
             public static void Enable()
             {
-                IL.HeroController.Move += Patch;
+                if (CharmsRebalanced.Config.PatchesEnabled["sprintmaster"]) IL.HeroController.Move += Patch;
             }
             public static void Disable()
             {

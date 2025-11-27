@@ -124,6 +124,10 @@ namespace CharmsRebalanced
             List<CharmData> equippedCharms = new List<CharmData>();
             foreach (string charmName in charmNames)
             {
+                if (CharmsRebalanced.Config.PatchesEnabled[charmName] == false)
+                {
+                    continue;
+                }
                 var special = GetExtraCharmData(charmName);
                 if (special != null)
                 {
