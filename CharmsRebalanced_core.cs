@@ -10,7 +10,7 @@ namespace CharmsRebalanced
     {
         internal static CharmsRebalanced Instance;
         internal static string ModDisplayName = "Charms Rebalanced";
-        internal static string version = "1.0.0.7";
+        internal static string version = "1.0.0.8";
         public CharmsRebalanced() : base(ModDisplayName) { }
         public override string GetVersion()
         {
@@ -135,11 +135,11 @@ namespace CharmsRebalanced
                             Saver = (int val) =>
                             {
                                 Instance.Log("Setting " + id + " to " + val);
-                                settings.GetProperty(id).SetValue(null, val);
+                                settings.GetProperty(id).SetValue(settingsInstance, val);
                             },
                             Loader = () =>
                             {
-                                return (int)settings.GetProperty(id).GetValue(null);
+                                return (int)settings.GetProperty(id).GetValue(settingsInstance);
                             }
                         });
                     }
