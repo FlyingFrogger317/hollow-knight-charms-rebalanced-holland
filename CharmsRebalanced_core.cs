@@ -6,7 +6,7 @@ using UnityEngine;
 using System.Linq;
 namespace CharmsRebalanced
 {
-    public class CharmsRebalanced : Mod, ITogglableMod, ICustomMenuMod, IGlobalSettings<CharmsRebalanced.Config._Config.GlobalSettings>
+    public class CharmsRebalanced : Mod, ITogglableMod, ICustomMenuMod, IGlobalSettings<CharmsRebalanced.Config._Config.GlobalSettings>, ILocalSettings<CharmsRebalanced.SaveModSettings>
     {
         internal static CharmsRebalanced Instance;
         internal static string ModDisplayName = "Charms Rebalanced";
@@ -72,6 +72,10 @@ namespace CharmsRebalanced
                 int? retVal = RunHandlers<int?>(UsableHook.SoulGain, soul);
                 return retVal ?? soul;
             });
+            ModHooks.OnReceiveDeathEventHook += (EnemyDeathEffects enemyDeathEffects, bool eventAlreadyReceived, ref float? attackDirection, ref bool resetDeathEvent, ref bool spellBurn, ref bool isWatery) =>
+            {
+                Log(enemyDeathEffects.gameObject.name);
+            };
             ILHooks.EnableAll();
             Log("Loaded");
         }
@@ -81,24 +85,46 @@ namespace CharmsRebalanced
             ILHooks.DisableAll();
             Log("Unloaded");
         }
+        public class SaveModSettings
+        {
+            public bool radDead = false;
+        }
+        SaveModSettings saveSettings = new SaveModSettings();
+        public void OnLoadLocal(SaveModSettings s)
+        {
+            saveSettings = s;
+        }
+        public SaveModSettings OnSaveLocal()
+        {
+            return saveSettings;
+        }
         public static class Config
         {
-            public static bool ExampleOption { get {
-                return _Config.GlobalSettings.ExampleOption == 0;
-            } }
+            public static bool ExampleOption
+            {
+                get
+                {
+                    return _Config.settingsInstance.ExampleOption == 0;
+                }
+            }
             public static class _Config
             {
-                static public class GlobalSettings
+                public class GlobalSettings
                 {
-                    public static int ExampleOption { get; set; } = 0;
+                    public int ExampleOption { get; set; } = 0;
+                    public Dictionary<string, bool> patchesEnabled = new()
+                    {
+
+                    };
                 }
+                static public GlobalSettings settingsInstance = new GlobalSettings();
                 static List<(string, string, string[], string)> options = new()
                 {
                     ("Example Option", "An example configuration option.", new string[] { "True", "False" }, "ExampleOption")
                 };
                 static public void CreateEntries(Modmenus.ModMenuScreenBuilder builder)
                 {
-                    var settings=typeof(GlobalSettings);
+                    var settings = typeof(GlobalSettings);
                     foreach (var (name, description, values, id) in options)
                     {
                         builder.AddHorizontalOption(new IMenuMod.MenuEntry
@@ -108,6 +134,7 @@ namespace CharmsRebalanced
                             Values = values,
                             Saver = (int val) =>
                             {
+                                Instance.Log("Setting " + id + " to " + val);
                                 settings.GetProperty(id).SetValue(null, val);
                             },
                             Loader = () =>
@@ -121,11 +148,11 @@ namespace CharmsRebalanced
         }
         public void OnLoadGlobal(CharmsRebalanced.Config._Config.GlobalSettings s)
         {
-            CharmsRebalanced.Config._Config.GlobalSettings = s;
+            CharmsRebalanced.Config._Config.settingsInstance = s;
         }
         public CharmsRebalanced.Config._Config.GlobalSettings OnSaveGlobal()
         {
-            return CharmsRebalanced.Config._Config.GlobalSettings;
+            return CharmsRebalanced.Config._Config.settingsInstance;
         }
         public MenuScreen GetMenuScreen(MenuScreen modListMenu, ModToggleDelegates? toggleDelegates)
         {

@@ -13,11 +13,95 @@ namespace CharmsRebalanced
         {
             return new CharmData(charmName);
         }
+        public static string[] ListAllCharmNames()
+        {
+            return charmNames.Values.ToArray();
+        }
+        public static CharmData GetExtraCharmData(string charmName)
+        {
+            bool inverted = false;
+            if (charmName[0] == '!')
+            {
+                charmName = charmName.Substring(1);
+                inverted = true;
+            }
+            CharmData data = null;
+            switch (charmName)
+            {
+                case "carefree_melody":
+                    if (PlayerData.instance.grimmChildLevel == 5)
+                    {
+                        data = new CharmData("grimmchild");
+                        data.charmName = "carefree_melody";
+                        return data;
+                    }
+                    return new CharmData();
+                case "grimmchild_0":
+                    if (PlayerData.instance.grimmChildLevel == 1)
+                    {
+                        data = new CharmData("grimmchild");
+                        data.charmName = "grimmchild_0";
+                        return data;
+                    }
+                    return new CharmData();
+                case "grimmchild_1":
+                    if (PlayerData.instance.grimmChildLevel == 2)
+                    {
+                        data = new CharmData("grimmchild");
+                        data.charmName = "grimmchild_1";
+                        return data;
+                    }
+                    return new CharmData();
+                case "grimmchild_2":
+                    if (PlayerData.instance.grimmChildLevel == 3)
+                    {
+                        data = new CharmData("grimmchild");
+                        data.charmName = "grimmchild_2";
+                        return data;
+                    }
+                    return new CharmData();
+                case "grimmchild_3":
+                    if (PlayerData.instance.grimmChildLevel == 4)
+                    {
+                        data = new CharmData("grimmchild");
+                        data.charmName = "grimmchild_3";
+                        return data;
+                    }
+                    return new CharmData();
+                case "kingsoul":
+                    if (PlayerData.instance.royalCharmState==2){
+                        data = new CharmData("kingsoul");
+                        return data;
+                    }
+                    return new CharmData();
+                case "void_heart":
+                    if (PlayerData.instance.gotShadeCharm){
+                        data = new CharmData("kingsoul");
+                        data.charmName = "void_heart";
+                        return data;
+                    }
+                    return new CharmData();
+                default:
+                    return null;
+            }
+        }
         public static CharmData[] GetCharmsIfEquippedOrNot(params string[] charmNames)
         {
             List<CharmData> equippedCharms = new List<CharmData>();
             foreach (string charmName in charmNames)
             {
+                var special = GetExtraCharmData(charmName);
+                if (special != null)
+                {
+                    if (special.equipped)
+                    {
+                        equippedCharms.Add(special);
+                    }
+                    continue;
+                } else if (special.charmName == "")
+                {
+                    continue;
+                }
                 if (charmName[0] == '!')
                 {
                     CharmData charmDataNeg = GetCharm(charmName.Substring(1));
@@ -93,6 +177,10 @@ namespace CharmsRebalanced
             internal CharmData(string charmName)
             {
                 this.charmName = charmName;
+            }
+            internal CharmData()
+            {
+                this.charmName = "";
             }
             public bool equipped
             {
