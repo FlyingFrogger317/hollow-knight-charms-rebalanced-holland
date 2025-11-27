@@ -231,7 +231,7 @@ namespace Modmenus
                 },
                 Proceed = true,
                 SubmitAction = _ => UIManager.instance.UIGoToDynamicMenu(MenuScreens[title]),
-                CancelAction = _ => UIManager.instance.UIGoToDynamicMenu(this.returnScreen),
+                CancelAction = _ => UIManager.instance.UIGoToDynamicMenu(this.menuBuilder.Screen),
             };
 
             this.buildActions.Add(c => c.AddMenuButton(title, config));

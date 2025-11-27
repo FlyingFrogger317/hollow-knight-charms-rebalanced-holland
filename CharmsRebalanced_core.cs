@@ -10,7 +10,7 @@ namespace CharmsRebalanced
     {
         internal static CharmsRebalanced Instance;
         internal static string ModDisplayName = "Charms Rebalanced";
-        internal static string version = "1.0.1.4";
+        internal static string version = "1.0.1.5";
         public CharmsRebalanced() : base(ModDisplayName) { }
         public override string GetVersion()
         {
@@ -110,12 +110,17 @@ namespace CharmsRebalanced
                     return _Config.settingsInstance.ExampleOption == 0;
                 }
             }
+            public static Dictionary<string, int> PatchesEnabled
+            {
+                get => _Config.settingsInstance.patchesEnabled;
+                set => _Config.settingsInstance.patchesEnabled = value;
+            }
             public static class _Config
             {
                 public class GlobalSettings
                 {
                     public int ExampleOption { get; set; } = 0;
-                    public Dictionary<string, Int32> patchesEnabled = new()
+                    public Dictionary<string, int> patchesEnabled = new()
                     {
                         { "swarm", 1 },
                         { "compass", 1 },
@@ -161,448 +166,153 @@ namespace CharmsRebalanced
                     };
                 }
                 static public GlobalSettings settingsInstance = new GlobalSettings();
-                // static List<(string, string, string[], string)> options = new()
-                // {
-                //     ("Example Option", "An example configuration option.", new string[] { "True", "False" }, "ExampleOption")
-                // };
-                public abstract class ScreenItem { }
-                public class Submenu : ScreenItem
-                {
-                    public string title;
-                    public string description;
-                    public List<ScreenItem> items = new();
-                }
-                public class Option : ScreenItem
-                {
-                    public string title;
-                    public string description;
-                    public string[] values;
-                    public string[] id;
-                }
-                public static List<ScreenItem> screenItems = new()
-                {
-                    new Option {
-                        title = "Example Option",
-                        description = "An example configuration option.",
-                        values = new string[] { "True", "False" },
-                        id = ["ExampleOption"]
-                    },
-                    new Submenu {
-                        title = "Patches Enabled",
-                        description = "Enable or disable individual charm patches.",
-                        items = new List<ScreenItem> {
-                            new Submenu {
-                                title = "Charm Row 1",
-                                description = "Patches for the first row of charms.",
-                                items = new List<ScreenItem> {
-                                    new Option {
-                                        title = "Gathering Swarm Patch",
-                                        description = "Enable or disable the Gathering Swarm charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "swarm"]
-                                    },
-                                    new Option {
-                                        title = "Wayward Compass Patch",
-                                        description = "Enable or disable the Wayward Compass charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "compass"]
-                                    },
-                                    new Option {
-                                        title = "Stalwart Shell Patch",
-                                        description = "Enable or disable the Stalwart Shell charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "stalwart"]
-                                    },
-                                    new Option {
-                                        title = "Soul Catcher Patch",
-                                        description = "Enable or disable the Soul Catcher charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "soul_catcher"]
-                                    },
-                                    new Option {
-                                        title = "Shaman Stone Patch",
-                                        description = "Enable or disable the Shaman Stone charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "shaman_stone"]
-                                    },
-                                    new Option {
-                                        title = "Soul Eater Patch",
-                                        description = "Enable or disable the Soul Eater charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "soul_eater"]
-                                    },
-                                    new Option {
-                                        title = "Dashmaster Patch",
-                                        description = "Enable or disable the Dashmaster charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "dashmaster"]
-                                    },
-                                    new Option {
-                                        title = "Sprintmaster Patch",
-                                        description = "Enable or disable the Sprintmaster charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "sprintmaster"]
-                                    },
-                                    new Option {
-                                        title = "Grubsong Patch",
-                                        description = "Enable or disable the Grubsong charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "grubsong"]
-                                    },
-                                    new Option {
-                                        title = "Grubberfly's Elegy Patch",
-                                        description = "Enable or disable the Grubberfly's Elegy charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "grubberflys_elegy"]
-                                    }
-                                }
-                            },
-
-                            new Submenu {
-                                title = "Charm Row 2",
-                                description = "Patches for the second row of charms.",
-                                items = new List<ScreenItem> {
-                                    new Option {
-                                        title = "Fragile/Unbreakable Heart Patch",
-                                        description = "Enable or disable the Fragile/Unbreakable Heart charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "fragile_unbreakable_heart"]
-                                    },
-                                    new Option {
-                                        title = "Fragile/Unbreakable Greed Patch",
-                                        description = "Enable or disable the Fragile/Unbreakable Greed charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "fragile_unbreakable_greed"]
-                                    },
-                                    new Option {
-                                        title = "Fragile/Unbreakable Strength Patch",
-                                        description = "Enable or disable the Fragile/Unbreakable Strength charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "fragile_unbreakable_strength"]
-                                    },
-                                    new Option {
-                                        title = "Spell Twister Patch",
-                                        description = "Enable or disable the Spell Twister charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "spell_twister"]
-                                    },
-                                    new Option {
-                                        title = "Steady Body Patch",
-                                        description = "Enable or disable the Steady Body charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "steady_body"]
-                                    },
-                                    new Option {
-                                        title = "Heavy Blow Patch",
-                                        description = "Enable or disable the Heavy Blow charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "heavy_blow"]
-                                    },
-                                    new Option {
-                                        title = "Quick Slash Patch",
-                                        description = "Enable or disable the Quick Slash charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "quick_slash"]
-                                    },
-                                    new Option {
-                                        title = "Longnail Patch",
-                                        description = "Enable or disable the Longnail charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "longnail"]
-                                    },
-                                    new Option {
-                                        title = "Mark of Pride Patch",
-                                        description = "Enable or disable the Mark of Pride charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "mark_of_pride"]
-                                    },
-                                    new Option {
-                                        title = "Fury of the Fallen Patch",
-                                        description = "Enable or disable the Fury of the Fallen charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "fury_of_the_fallen"]
-                                    }
-                                }
-                            },
-
-                            new Submenu {
-                                title = "Charm Row 3",
-                                description = "Patches for the third row of charms.",
-                                items = new List<ScreenItem> {
-                                    new Option {
-                                        title = "Thorns of Agony Patch",
-                                        description = "Enable or disable the Thorns of Agony charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "thorns_of_agony"]
-                                    },
-                                    new Option {
-                                        title = "Baldur Shell Patch",
-                                        description = "Enable or disable the Baldur Shell charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "baldur_shell"]
-                                    },
-                                    new Option {
-                                        title = "Flukenest Patch",
-                                        description = "Enable or disable the Flukenest charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "flukenest"]
-                                    },
-                                    new Option {
-                                        title = "Defender's Crest Patch",
-                                        description = "Enable or disable the Defender's Crest charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "defenders_crest"]
-                                    },
-                                    new Option {
-                                        title = "Glowing Womb Patch",
-                                        description = "Enable or disable the Glowing Womb charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "glowing_womb"]
-                                    },
-                                    new Option {
-                                        title = "Quick Focus Patch",
-                                        description = "Enable or disable the Quick Focus charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "quick_focus"]
-                                    },
-                                    new Option {
-                                        title = "Deep Focus Patch",
-                                        description = "Enable or disable the Deep Focus charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "deep_focus"]
-                                    },
-                                    new Option {
-                                        title = "Lifeblood Heart Patch",
-                                        description = "Enable or disable the Lifeblood Heart charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "lifeblood_heart"]
-                                    },
-                                    new Option {
-                                        title = "Lifeblood Core Patch",
-                                        description = "Enable or disable the Lifeblood Core charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "lifeblood_core"]
-                                    },
-                                    new Option {
-                                        title = "Joni's Blessing Patch",
-                                        description = "Enable or disable the Joni's Blessing charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "jonis_blessing"]
-                                    }
-                                }
-                            },
-
-                            new Submenu {
-                                title = "Charm Row 4",
-                                description = "Patches for the fourth row of charms.",
-                                items = new List<ScreenItem> {
-                                    new Option {
-                                        title = "Hiveblood Patch",
-                                        description = "Enable or disable the Hiveblood charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "hiveblood"]
-                                    },
-                                    new Option {
-                                        title = "Spore Shroom Patch",
-                                        description = "Enable or disable the Spore Shroom charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "spore_shroom"]
-                                    },
-                                    new Option {
-                                        title = "Sharp Shadow Patch",
-                                        description = "Enable or disable the Sharp Shadow charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "sharp_shadow"]
-                                    },
-                                    new Option {
-                                        title = "Shape of Unn Patch",
-                                        description = "Enable or disable the Shape of Unn charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "shape_of_unn"]
-                                    },
-                                    new Option {
-                                        title = "Nailmaster's Glory Patch",
-                                        description = "Enable or disable the Nailmaster's Glory charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "nailmasters_glory"]
-                                    },
-                                    new Option {
-                                        title = "Weaversong Patch",
-                                        description = "Enable or disable the Weaversong charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "weaversong"]
-                                    },
-                                    new Option {
-                                        title = "Dream Wielder Patch",
-                                        description = "Enable or disable the Dream Wielder charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "dream_wielder"]
-                                    },
-                                    new Option {
-                                        title = "Grimmchild Patch",
-                                        description = "Enable or disable the Grimmchild charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "grimmchild"]
-                                    },
-                                    new Option {
-                                        title = "Carefree Melody Patch",
-                                        description = "Enable or disable the Carefree Melody charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "carefree_melody"]
-                                    },
-                                    new Option {
-                                        title = "Kingsoul Patch",
-                                        description = "Enable or disable the Kingsoul charm patch.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "kingsoul"]
-                                    },
-                                    new Option {
-                                        title = "Voidsoul",
-                                        description = "Enable or disable the Voidsoul charm.",
-                                        values = new string[] { "Disabled", "Enabled" },
-                                        id = ["patchesEnabled", "voidsoul"]
-                                    }
-                                }
-                            }
-                        }
-                    }
-                };
-                public static MenuScreen CreateEntriesAndBuild(Modmenus.ModMenuScreenBuilder rootBuilder)
-                {
-                    Dictionary<Submenu, Modmenus.ModMenuScreenBuilder> builders = new();
-                    Dictionary<Submenu, MenuScreen> screens = new();
-
-                    // --- PASS 1: Build builder tree only (NO SCREEN CREATION) ---
-                    Queue<(Modmenus.ModMenuScreenBuilder parentBuilder, List<ScreenItem> items)> q =
-                        new Queue<(Modmenus.ModMenuScreenBuilder, List<ScreenItem>)>();
-
-                    q.Enqueue((rootBuilder, screenItems));
-
-                    while (q.Count > 0)
-                    {
-                        var (currentBuilder, items) = q.Dequeue();
-
-                        foreach (var item in items)
-                        {
-                            if (item is Option opt)
-                            {
-                                currentBuilder.AddHorizontalOption(new IMenuMod.MenuEntry
-                                {
-                                    Name = opt.title,
-                                    Description = opt.description,
-                                    Values = opt.values,
-
-                                    Loader = () =>
-                                    {
-                                        string[] parts = opt.id.ToArray();
-
-                                        if (parts.Length == 1)
-                                        {
-                                            var prop = settingsInstance.GetType().GetProperty(parts[0]);
-                                            return (int)(prop?.GetValue(settingsInstance) ?? 0);
-                                        }
-
-                                        if (parts.Length == 2 && parts[0] == "patchesEnabled")
-                                        {
-                                            string key = parts[1];
-                                            return settingsInstance.patchesEnabled.TryGetValue(key, out int v) ? v : 0;
-                                        }
-
-                                        return 0;
-                                    },
-
-                                    Saver = (int index) =>
-                                    {
-                                        string[] parts = opt.id.ToArray();
-
-                                        if (parts.Length == 1)
-                                        {
-                                            var prop = settingsInstance.GetType().GetProperty(parts[0]);
-                                            prop?.SetValue(settingsInstance, index);
-                                            return;
-                                        }
-
-                                        if (parts.Length == 2 && parts[0] == "patchesEnabled")
-                                        {
-                                            string key = parts[1];
-                                            settingsInstance.patchesEnabled[key] = index;
-                                            return;
-                                        }
-                                    }
-                                });
-                            }
-                            else if (item is Submenu sub)
-                            {
-                                // Create ONLY the builder, no screens yet
-                                var subBuilder = new Modmenus.ModMenuScreenBuilder(sub.title, null);
-                                builders[sub] = subBuilder;
-
-                                // Button added to parent, but no screen yet
-                                currentBuilder.AddButton(sub.title, sub.description, () =>
-                                {
-                                    // If BFS hasn’t created the screen yet, create it now.
-                                    if (!screens.TryGetValue(sub, out var scr) || scr == null)
-                                    {
-                                        scr = builders[sub].CreateMenuScreen();
-                                        screens[sub] = scr;
-                                    }
-
-                                    UIManager.instance.UIGoToDynamicMenu(scr);
-                                });
-
-                                // Schedule building children builders
-                                q.Enqueue((subBuilder, sub.items));
-                            }
-                        }
-                    }
-
-                    // --- PASS 2: Now that the tree is built, create screens BFS in correct order ---
-                    var rootScreen = rootBuilder.CreateMenuScreen();
-
-                    Queue<(Submenu sub, MenuScreen parent)> q2 = new();
-                    foreach (var kv in builders)
-                        q2.Enqueue((kv.Key, rootScreen));
-
-                    while (q2.Count > 0)
-                    {
-                        var (sub, parentScreen) = q2.Dequeue();
-                        var subBuilder = builders[sub];
-
-                        // Correct parent given *at construction time*
-                        subBuilder.returnScreen = parentScreen;
-
-                        var screen = subBuilder.CreateMenuScreen();
-                        screens[sub] = screen;
-
-                        foreach (var child in sub.items)
-                            if (child is Submenu childSub)
-                                q2.Enqueue((childSub, screen));
-                    }
-
-                    return rootScreen;
-                }
             }
         }
         public void OnLoadGlobal(CharmsRebalanced.Config._Config.GlobalSettings s)
-        {
-            CharmsRebalanced.Config._Config.settingsInstance = s;
-        }
+            {
+                CharmsRebalanced.Config._Config.settingsInstance = s;
+            }
         public CharmsRebalanced.Config._Config.GlobalSettings OnSaveGlobal()
         {
             return CharmsRebalanced.Config._Config.settingsInstance;
         }
         public MenuScreen GetMenuScreen(MenuScreen modListMenu, ModToggleDelegates? toggleDelegates)
         {
-            Modmenus.ModMenuScreenBuilder builder = new Modmenus.ModMenuScreenBuilder(ModDisplayName, modListMenu);
-            builder.AddHorizontalOption(new IMenuMod.MenuEntry
+            var root = new Modmenus.ModMenuScreenBuilder(ModDisplayName, modListMenu);
+
+            // Main toggle
+            root.AddHorizontalOption(new IMenuMod.MenuEntry
             {
                 Name = "Enabled",
                 Description = "Whether the mod is enabled or not.",
-                Values = new string[] { "True", "False" },
-                Saver = (int val) => { toggleDelegates?.SetModEnabled(val == 0); },
-                Loader = () => (bool)(toggleDelegates?.GetModEnabled()) ? 0 : 1
+                Values = new[] { "True", "False" },
+                Saver = v => toggleDelegates?.SetModEnabled(v == 0),
+                Loader = () => toggleDelegates?.GetModEnabled() == true ? 0 : 1
             });
-            return Config._Config.CreateEntriesAndBuild(builder);
+
+            // Example option
+            root.AddHorizontalOption(new IMenuMod.MenuEntry
+            {
+                Name = "Example Option",
+                Description = "Example global toggle.",
+                Values = new[] { "True", "False" },
+                Saver = v => Config._Config.settingsInstance.ExampleOption = v,
+                Loader = () => Config._Config.settingsInstance.ExampleOption
+            });
+
+            // Patches Enabled submenu
+            var patchMenu = BuildPatchesMenu(root.menuBuilder.Screen);
+            root.AddSubpage("Patches Enabled", "Enable or disable individual charm patches.", patchMenu);
+
+            return root.CreateMenuScreen();
+        }
+        private MenuScreen BuildPatchesMenu(MenuScreen parent)
+        {
+            var b = new Modmenus.ModMenuScreenBuilder("Patches Enabled", parent);
+
+            b.AddSubpage("Charm Row 1", "Patches for the first row of charms.",
+                BuildRow1(b.menuBuilder.Screen));
+
+            b.AddSubpage("Charm Row 2", "Patches for the second row of charms.",
+                BuildRow2(b.menuBuilder.Screen));
+
+            b.AddSubpage("Charm Row 3", "Patches for the third row of charms.",
+                BuildRow3(b.menuBuilder.Screen));
+
+            b.AddSubpage("Charm Row 4", "Patches for the fourth row of charms.",
+                BuildRow4(b.menuBuilder.Screen));
+
+            return b.CreateMenuScreen();
+        }
+        private void AddPatch(Modmenus.ModMenuScreenBuilder b, string title, string key)
+        {
+            b.AddHorizontalOption(new IMenuMod.MenuEntry
+            {
+                Name = title,
+                Description = "Enable or disable this charm patch.",
+                Values = new[] { "Disabled", "Enabled" },
+
+                Loader = () =>
+                {
+                    if (!Config._Config.settingsInstance.patchesEnabled.TryGetValue(key, out int v))
+                        return 0;
+                    return v;
+                },
+
+                Saver = v =>
+                {
+                    Config._Config.settingsInstance.patchesEnabled[key] = v;
+                }
+            });
+        }
+        private MenuScreen BuildRow1(MenuScreen parent)
+        {
+            var b = new Modmenus.ModMenuScreenBuilder("Charm Row 1", parent);
+
+            AddPatch(b, "Gathering Swarm Patch", "swarm");
+            AddPatch(b, "Wayward Compass Patch", "compass");
+            AddPatch(b, "Stalwart Shell Patch", "stalwart");
+            AddPatch(b, "Soul Catcher Patch", "soul_catcher");
+            AddPatch(b, "Shaman Stone Patch", "shaman_stone");
+            AddPatch(b, "Soul Eater Patch", "soul_eater");
+            AddPatch(b, "Dashmaster Patch", "dashmaster");
+            AddPatch(b, "Sprintmaster Patch", "sprintmaster");
+            AddPatch(b, "Grubsong Patch", "grubsong");
+            AddPatch(b, "Grubberfly's Elegy Patch", "grubberflys_elegy");
+
+            return b.CreateMenuScreen();
+        }
+        private MenuScreen BuildRow2(MenuScreen parent)
+        {
+            var b = new Modmenus.ModMenuScreenBuilder("Charm Row 2", parent);
+
+            AddPatch(b, "Fragile/Unbreakable Heart Patch", "fragile_unbreakable_heart");
+            AddPatch(b, "Fragile/Unbreakable Greed Patch", "fragile_unbreakable_greed");
+            AddPatch(b, "Fragile/Unbreakable Strength Patch", "fragile_unbreakable_strength");
+            AddPatch(b, "Spell Twister Patch", "spell_twister");
+            AddPatch(b, "Steady Body Patch", "steady_body");
+            AddPatch(b, "Heavy Blow Patch", "heavy_blow");
+            AddPatch(b, "Quick Slash Patch", "quick_slash");
+            AddPatch(b, "Longnail Patch", "longnail");
+            AddPatch(b, "Mark of Pride Patch", "mark_of_pride");
+            AddPatch(b, "Fury of the Fallen Patch", "fury_of_the_fallen");
+
+            return b.CreateMenuScreen();
+        }
+        private MenuScreen BuildRow3(MenuScreen parent)
+        {
+            var b = new Modmenus.ModMenuScreenBuilder("Charm Row 3", parent);
+
+            AddPatch(b, "Thorns of Agony Patch", "thorns_of_agony");
+            AddPatch(b, "Baldur Shell Patch", "baldur_shell");
+            AddPatch(b, "Flukenest Patch", "flukenest");
+            AddPatch(b, "Defender's Crest Patch", "defenders_crest");
+            AddPatch(b, "Glowing Womb Patch", "glowing_womb");
+            AddPatch(b, "Quick Focus Patch", "quick_focus");
+            AddPatch(b, "Deep Focus Patch", "deep_focus");
+            AddPatch(b, "Lifeblood Heart Patch", "lifeblood_heart");
+            AddPatch(b, "Lifeblood Core Patch", "lifeblood_core");
+            AddPatch(b, "Joni's Blessing Patch", "jonis_blessing");
+
+            return b.CreateMenuScreen();
+        }
+        private MenuScreen BuildRow4(MenuScreen parent)
+        {
+            var b = new Modmenus.ModMenuScreenBuilder("Charm Row 4", parent);
+
+            AddPatch(b, "Hiveblood Patch", "hiveblood");
+            AddPatch(b, "Spore Shroom Patch", "spore_shroom");
+            AddPatch(b, "Sharp Shadow Patch", "sharp_shadow");
+            AddPatch(b, "Shape of Unn Patch", "shape_of_unn");
+            AddPatch(b, "Nailmaster's Glory Patch", "nailmasters_glory");
+            AddPatch(b, "Weaversong Patch", "weaversong");
+            AddPatch(b, "Dream Wielder Patch", "dream_wielder");
+            AddPatch(b, "Grimmchild Patch", "grimmchild");
+            AddPatch(b, "Carefree Melody Patch", "carefree_melody");
+            AddPatch(b, "Kingsoul Patch", "kingsoul");
+            AddPatch(b, "Voidsoul Patch", "voidsoul");
+
+            return b.CreateMenuScreen();
         }
         public bool ToggleButtonInsideMenu => true;
         private int OnPlayerDataGetInt(string field, int orig)
