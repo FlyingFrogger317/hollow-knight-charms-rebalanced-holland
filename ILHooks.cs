@@ -3,14 +3,39 @@ using UnityEngine;
 using Modding;
 using Mono.Cecil.Cil;
 using MonoMod.RuntimeDetour.HookGen;
+using System.Collections.Generic;
+using System;
 
 // All IL hooks go here
-namespace CharmsRebalanced.ILHooks
+namespace CharmsRebalanced
 {
     public static class ILHooks
     {
+        private static List<(Action Enable, Action Disable)> registeredHooks = new();
+        public static void Register(Action enable, Action disable)
+        {
+            registeredHooks.Add((enable, disable));
+        }
+        public static void EnableAll()
+        {
+            foreach (var (enable, _) in registeredHooks)
+            {
+                enable();
+            }
+        }
+        public static void DisableAll()
+        {
+            foreach (var (_, disable) in registeredHooks)
+            {
+                disable();
+            }
+        }
         public static class SprintmasterMakeWorkInAir
         {
+            static SprintmasterMakeWorkInAir()
+            {
+                ILHooks.Register(Enable, Disable);
+            }
             public static void Enable()
             {
                 IL.HeroController.Move += Patch;

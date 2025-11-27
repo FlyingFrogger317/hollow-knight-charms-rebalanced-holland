@@ -1,35 +1,83 @@
 ﻿using Modding;
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 using System.Linq;
 namespace CharmsRebalanced
 {
-    public class CharmsRebalanced : Mod
+    public class CharmsRebalanced : Mod, ITogglableMod
     {
         internal static CharmsRebalanced Instance;
         internal static string ModDisplayName = "CharmsRebalanced";
-        internal static string version = "1.0.0.2";
+        internal static string version = "1.0.0.3";
         public CharmsRebalanced() : base(ModDisplayName) { }
         public override string GetVersion()
         {
             return version;
         }
-
+        private static class UsedHooks
+        {
+            private static Dictionary<string, IList> hooks = new();
+            public static T RegisterHook<T>(string hook, T del)
+            {
+                if (!hooks.ContainsKey(hook))
+                {
+                    hooks[hook] = new List<T>();
+                }
+                hooks[hook].Add(del);
+                return del;
+            }
+            public static void UnregisterHooks(string hook)
+            {
+                if (hooks.ContainsKey(hook))
+                {
+                    foreach (var del in hooks[hook])
+                    {
+                        switch (hook)
+                        {
+                            case "GetPlayerInt":
+                                ModHooks.GetPlayerIntHook -= (Modding.Delegates.GetIntProxy)del;
+                                break;
+                            case "CharmUpdate":
+                                ModHooks.CharmUpdateHook -= (Modding.Delegates.CharmUpdateHandler)del;
+                                break;
+                            case "SoulGain":
+                                ModHooks.SoulGainHook -= (Func<int, int>)del;
+                                break;
+                        }
+                    }
+                    hooks[hook].Clear();
+                }
+            }
+            public static void UnregisterAllHooks()
+            {
+                foreach (var hook in hooks.Keys)
+                {
+                    UnregisterHooks(hook);
+                }
+            }
+        }
         public override void Initialize(Dictionary<string, Dictionary<string, GameObject>> preloadedObjects)
         {
             Instance = this;
             CharmMods.Init();
-            ModHooks.GetPlayerIntHook += OnPlayerDataGetInt;
-            ModHooks.CharmUpdateHook += (PlayerData data, HeroController controller) =>
+            ModHooks.GetPlayerIntHook += UsedHooks.RegisterHook<Modding.Delegates.GetIntProxy>("GetPlayerInt", OnPlayerDataGetInt);
+            ModHooks.CharmUpdateHook += UsedHooks.RegisterHook<Modding.Delegates.CharmUpdateHandler>("CharmUpdate", (PlayerData data, HeroController controller) =>
             {
                 RunHandlers(UsableHook.CharmUpdate, data, controller);
-            };
-            ModHooks.SoulGainHook += soul =>
+            });
+            ModHooks.SoulGainHook += UsedHooks.RegisterHook<Func<int, int>>("SoulGain", soul =>
             {
                 int? retVal = RunHandlers<int?>(UsableHook.SoulGain, soul);
                 return retVal ?? soul;
-            };
+            });
+            ILHooks.EnableAll();
+        }
+        public void Unload()
+        {
+            UsedHooks.UnregisterAllHooks();
+            ILHooks.DisableAll();
         }
         private int OnPlayerDataGetInt(string field, int orig)
         {
@@ -73,8 +121,7 @@ namespace CharmsRebalanced
         public enum UsableHook
         {
             CharmUpdate,
-            SoulGain,
-            Initialize
+            SoulGain
         }
         private class HandlerList : List<(string[], CharmHandler)> { };
         private Dictionary<UsableHook, HandlerList> RegisteredHandlers = Enum.GetValues(typeof(UsableHook)).Cast<UsableHook>().ToDictionary(hook => hook, hook => new HandlerList());
