@@ -16,6 +16,9 @@ namespace CharmsRebalanced
         {
             return version;
         }
+        public static void LogMessage(string message) {
+            Instance.Log(message);
+        }
         private static class UsedHooks
         {
             private static Dictionary<string, IList> hooks = new();
