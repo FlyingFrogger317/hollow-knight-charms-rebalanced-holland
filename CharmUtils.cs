@@ -121,7 +121,6 @@ namespace CharmsRebalanced
                     {
                         continue;
                     }
-                    // FIRST check if special.charmName exists in config
                     if (CharmsRebalanced.Config.PatchesEnabled.TryGetValue(special.charmName, out bool enabledSpecial))
                     {
                         if (!enabledSpecial)
@@ -158,7 +157,6 @@ namespace CharmsRebalanced
 
                     continue;
                 }
-
                 if (CharmsRebalanced.Config.PatchesEnabled[charmName] == false)
                 {
                     continue;
@@ -207,9 +205,9 @@ namespace CharmsRebalanced
             { 32, "quick_slash" },//+ attack cooldown, should be HeroController.ATTACK_DURATION_CH and HeroController.ATTACK_COOLDOWN_TIME_CH
             { 33, "spell_twister" },//nothing to do
             { 34, "deep_focus" },//decrease the penalty
-            { 35, "grubberflys_elegy" },//figure out how to patch out stuff on lines around 17126 in c#
+            { 35, "grubberflys_elegy" },//33% done, removed health limits (and still hve fury beams when it applies), but now for damage nd soul mods (should be easier)
             { 36, "kingsoul" },// figure out how to deal with voidsoul being an extension of void heart and being unable to equip
-            { 37, "sprintmaster" },//+more speed (edit HeroController.RUN_SPEED_CH or HeroController.RUN_SPEED_CH_COMBO if also dashmaster) and in the air (remove check for on ground at 17029 and 17033)
+            { 37, "sprintmaster" },//50% done, +more speed (edit HeroController.RUN_SPEED_CH or HeroController.RUN_SPEED_CH_COMBO if also dashmaster) and in the air (done)
             { 38, "dreamshield" },
             { 39, "weaversong" },
             { 40, "grimmchild" }

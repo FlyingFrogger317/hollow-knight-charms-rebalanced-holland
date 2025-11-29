@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System;
 using System.Reflection;
 using System.Linq;
-using UnityEngine;
+using System.IO;
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class AutoInit : Attribute {}
 // All IL hooks go here
@@ -40,7 +40,7 @@ namespace CharmsRebalanced
                 CharmsRebalanced.Instance.Log($"Disabling {inClass.Name}");
                 inClass.GetMethod("Disable").Invoke(null, null);
             };
-            registeredHooks.Add((enable,disable));
+            registeredHooks.Add((enable, disable));
         }
         public static void EnableAll()
         {
@@ -55,6 +55,65 @@ namespace CharmsRebalanced
             {
                 disable();
             }
+        }
+        public static void Log(string message)
+        {
+            CharmsRebalanced.Instance.Log(message);
+        }
+        public static void NopRange(this ILContext il, int firstOne, int lastOne)
+        {
+            ILCursor nop = new(il);
+            nop.Index = firstOne;
+            for (int i = firstOne; i < lastOne + 1; i++)
+            {
+                nop.Next.OpCode = OpCodes.Nop;
+                nop.Next.Operand = null;
+                nop.Index++;
+            }
+        }
+        public static void Set(this ILContext il, int id, OpCode opCode, object operand)
+        {
+            ILCursor setc = new(il);
+            setc.Goto(id);
+            setc.Next.OpCode = opCode;
+            setc.Next.Operand = operand;
+        }
+        public static ILLabel NewLabel(this ILContext il, int id)
+        {
+            ILCursor labelC = new(il);
+            labelC.Goto(id);
+            return labelC.MarkLabel();
+        }
+        public static void DumpIL(this ILContext ctx, string dumpName)
+        {
+            string path = $"/tmp/{dumpName}.il";
+            bool end = true;
+            ILCursor c = new(ctx);
+            c.Index = 0;
+            StreamWriter writer = new(path, false);
+            string dump = $"{c.Index}: {c.Next.OpCode} {c.Next.Operand}";
+            Action<ILCursor> writedump = (ILCursor c) =>
+            {
+                if (c.Next.Operand is ILLabel label)
+                {
+                    Instruction target = label.Target;
+                    int index = ctx.IndexOf(target);
+                    dump += $"\n{c.Index}: {c.Next.OpCode} Label:";
+                    dump += $"\n        {index}: {target.OpCode} {target.Operand}";
+                }
+                else
+                {
+                    dump += $"\n{c.Index}: {c.Next.OpCode} {c.Next.Operand}";
+                }
+            };
+            do
+            {
+                c.Index++;
+                writedump(c);
+                end = c.Index >= c.Instrs.Count - 1;
+            } while (!end);
+            writer.Write(dump);
+            writer.Close();
         }
     }
     [AutoInit]
@@ -102,70 +161,42 @@ namespace CharmsRebalanced
 
         private static void Patch(ILContext il)
         {
-            ILCursor c = new(il);
-
-            // -------------------------------------------------------
-            // PATCH ALL 3 ELEGY BEAM CONDITIONS
-            // -------------------------------------------------------
-            for (int i = 0; i < 3; i++)
-            {
-                // Match: ldstr "equippedCharm_35" → GetBool
-                if (!c.TryGotoNext(
-                    MoveType.After,
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld<HeroController>("playerData"),
-                    x => x.MatchLdstr("equippedCharm_35"),
-                    x => x.MatchCallvirt<PlayerData>("GetBool")
-                ))
-                {
-                    CharmsRebalanced.LogMessage($"ElegyCond matcher {i} FAILED");
-                    break;
-                }
-
-                // At this point the GetBool result is on the stack.
-                // Replace it with our delegate value.
-                c.EmitDelegate(GrubberflyBeamCondition);
-                c.Emit(OpCodes.Pop); // discard original GetBool bool
-            }
-
-
-            // Reset cursor for Fury
-            c.Index = 0;
-
-            // -------------------------------------------------------
-            // PATCH ALL 3 FURY BEAM CONDITIONS
-            // -------------------------------------------------------
-            for (int i = 0; i < 3; i++)
-            {
-                // Find: ldstr "equippedCharm_6" → callvirt GetBool
-                if (!c.TryGotoNext(
-                    MoveType.After,
-                    x => x.MatchLdarg(0),
-                    x => x.MatchLdfld<HeroController>("playerData"),
-                    x => x.MatchLdstr("equippedCharm_6"),
-                    x => x.MatchCallvirt<PlayerData>("GetBool")
-                ))
-                {
-                    CharmsRebalanced.LogMessage($"FuryCond matcher {i} FAILED");
-                    break;
-                }
-
-                c.EmitDelegate(FuryCondition);
-                c.Emit(OpCodes.Pop);
-            }
+            il.DumpIL("initial");
+            MethodInfo condElegy = typeof(GrubberflyRemoveMaxHealthRestraint)
+                .GetMethod("GrubberflyBeamCondition", BindingFlags.Static | BindingFlags.NonPublic);
+            MethodInfo condFury = typeof(GrubberflyRemoveMaxHealthRestraint)
+                .GetMethod("FuryBeamCondition", BindingFlags.Static | BindingFlags.NonPublic);
+            il.NopRange(86, 106);
+            il.Set(106, OpCodes.Call, condElegy);
+            il.NopRange(148, 163);
+            il.Set(163, OpCodes.Call, condFury);
+            il.Set(164, OpCodes.Brfalse, il.NewLabel(489));
+            il.NopRange(226, 246);
+            il.Set(246, OpCodes.Call, condElegy);
+            il.NopRange(289, 304);
+            il.Set(304, OpCodes.Call, condFury);
+            il.Set(305, OpCodes.Brfalse, il.NewLabel(489));
+            il.NopRange(368,388);
+            il.Set(388, OpCodes.Call, condElegy);
+            il.NopRange(431, 446);
+            il.Set(446, OpCodes.Call, condFury);
+            il.Set(447, OpCodes.Brfalse, il.NewLabel(489));
+            il.DumpIL("final");
         }
-
+        //false means fury, true means normal
         private static bool GrubberflyBeamCondition()
         {
-            CharmsRebalanced.LogMessage("Elegy1");
-            return !FuryCondition();
-        }
-        private static bool FuryCondition()
-        {
-            CharmsRebalanced.LogMessage("Elegy2");
-            bool hasFuryEquipped = PlayerData.instance.GetBool("charmEquipped_6");
+            CharmsRebalanced.LogMessage("Elegy");
+            bool hasFuryEquipped = CharmUtils.GetCharm("fury").equipped;
             bool willFuryApply = PlayerData.instance.health <= 3;
-            return hasFuryEquipped && willFuryApply;
+            CharmsRebalanced.LogMessage(hasFuryEquipped.ToString());
+            CharmsRebalanced.LogMessage(willFuryApply.ToString());
+            CharmsRebalanced.LogMessage((hasFuryEquipped && willFuryApply).ToString());
+            return !(hasFuryEquipped && willFuryApply);
+        }
+        private static bool FuryBeamCondition()
+        {
+            return !GrubberflyBeamCondition();
         }
     }
 }
