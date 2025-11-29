@@ -1,20 +1,46 @@
 using MonoMod.Cil;
-using UnityEngine;
-using Modding;
 using Mono.Cecil.Cil;
-using MonoMod.RuntimeDetour.HookGen;
 using System.Collections.Generic;
 using System;
-using InControl;
+using System.Reflection;
+using System.Linq;
+using UnityEngine;
+[AttributeUsage(AttributeTargets.Class)]
+public sealed class AutoInit : Attribute {}
 // All IL hooks go here
 namespace CharmsRebalanced
 {
     public static class ILHooks
     {
         private static List<(Action Enable, Action Disable)> registeredHooks = new();
-        public static void Register(Action enable, Action disable)
+        public static void AutoRegisterAll()
         {
-            registeredHooks.Add((enable, disable));
+            var assembly = Assembly.GetExecutingAssembly();
+
+            var hookClasses = assembly.GetTypes()
+                .Where(t => t.IsAbstract && t.IsSealed) // static class
+                .Where(t => t.IsDefined(typeof(AutoInit), false))
+                .OrderBy(t => t.Name);
+            foreach (Type hook in hookClasses)
+            {
+                Register(hook);
+            }
+        }
+
+        public static void Register(Type inClass)
+        {
+            CharmsRebalanced.Instance.Log($"Registering {inClass.Name}");
+            Action enable = () =>
+            {
+                CharmsRebalanced.Instance.Log($"Enabling {inClass.Name}");
+                inClass.GetMethod("Enable").Invoke(null, null);
+            };
+            Action disable = () =>
+            {
+                CharmsRebalanced.Instance.Log($"Disabling {inClass.Name}");
+                inClass.GetMethod("Disable").Invoke(null, null);
+            };
+            registeredHooks.Add((enable,disable));
         }
         public static void EnableAll()
         {
@@ -30,46 +56,38 @@ namespace CharmsRebalanced
                 disable();
             }
         }
-        public static class SprintmasterMakeWorkInAir
+    }
+    [AutoInit]
+    public static class SprintmasterMakeWorkInAir
+    {
+        public static void Enable()
         {
-            static SprintmasterMakeWorkInAir()
+            if (CharmsRebalanced.Config.PatchesEnabled["sprintmaster"]) IL.HeroController.Move += Patch;
+        }
+        public static void Disable()
+        {
+            IL.HeroController.Move -= Patch;
+        }
+        private static void Patch(ILContext il)
+        {
+            ILCursor c = new(il);
+            if (c.TryGotoNext(MoveType.Before, x => x.MatchLdarg(0), x => x.MatchLdfld<HeroController>("cState"), x => x.MatchLdfld<HeroControllerStates>("onGround"), x => x.MatchBrfalse(out ILLabel _)))
             {
-                CharmsRebalanced.Instance.Log("Registering IL Hook SprintmasterMakeWorkInAir");
-                ILHooks.Register(Enable, Disable);
+                c.RemoveRange(3);
+                c.Emit(OpCodes.Ldc_I4_1);
+                CharmsRebalanced.Instance.Log("Patched Sprintmaster to work in air if you also have Dashmaster.");
             }
-            public static void Enable()
+            if (c.TryGotoNext(MoveType.Before, x => x.MatchLdarg(0), x => x.MatchLdfld<HeroController>("cState"), x => x.MatchLdfld<HeroControllerStates>("onGround"), x => x.MatchBrfalse(out ILLabel _)))
             {
-                if (CharmsRebalanced.Config.PatchesEnabled["sprintmaster"]) IL.HeroController.Move += Patch;
-            }
-            public static void Disable()
-            {
-                IL.HeroController.Move -= Patch;
-            }
-            private static void Patch(ILContext il)
-            {
-                ILCursor c = new(il);
-                if (c.TryGotoNext(MoveType.Before, x => x.MatchLdarg(0), x => x.MatchLdfld<HeroController>("cState"), x => x.MatchLdfld<HeroControllerStates>("onGround"), x => x.MatchBrfalse(out ILLabel _)))
-                {
-                    c.RemoveRange(3);
-                    c.Emit(OpCodes.Ldc_I4_1);
-                    CharmsRebalanced.Instance.Log("Patched Sprintmaster to work in air if you also have Dashmaster.");
-                }
-                if (c.TryGotoNext(MoveType.Before, x => x.MatchLdarg(0), x => x.MatchLdfld<HeroController>("cState"), x => x.MatchLdfld<HeroControllerStates>("onGround"), x => x.MatchBrfalse(out ILLabel _)))
-                {
-                    c.RemoveRange(3);
-                    c.Emit(OpCodes.Ldc_I4_1);
-                    CharmsRebalanced.Instance.Log("Patched Sprintmaster to work in air.");
-                }
+                c.RemoveRange(3);
+                c.Emit(OpCodes.Ldc_I4_1);
+                CharmsRebalanced.Instance.Log("Patched Sprintmaster to work in air.");
             }
         }
     }
+    [AutoInit]
     public static class GrubberflyRemoveMaxHealthRestraint
     {
-        static GrubberflyRemoveMaxHealthRestraint()
-        {
-            CharmsRebalanced.Instance.Log("Registering IL Hook GrubberflyRemoveMaxHealthRestraint");
-            ILHooks.Register(Enable, Disable);
-        }
         public static void Enable()
         {
             if (CharmsRebalanced.Config.PatchesEnabled["grubberflys_elegy"])
@@ -85,53 +103,59 @@ namespace CharmsRebalanced
         private static void Patch(ILContext il)
         {
             ILCursor c = new(il);
+
+            // -------------------------------------------------------
+            // PATCH ALL 3 ELEGY BEAM CONDITIONS
+            // -------------------------------------------------------
             for (int i = 0; i < 3; i++)
             {
-                c.GotoNext(
-                    MoveType.Before,
-                    x => x.MatchCallvirt<PlayerData>("GetInt"),    
-                    x => x.MatchCallvirt<PlayerData>("GetInt")     
-                );
+                // Match: ldstr "equippedCharm_35" → GetBool
+                if (!c.TryGotoNext(
+                    MoveType.After,
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld<HeroController>("playerData"),
+                    x => x.MatchLdstr("equippedCharm_35"),
+                    x => x.MatchCallvirt<PlayerData>("GetBool")
+                ))
+                {
+                    CharmsRebalanced.LogMessage($"ElegyCond matcher {i} FAILED");
+                    break;
+                }
 
-                // Remove original condition (until next branch)
-                c.GotoNext(MoveType.After, x => x.Match(OpCodes.Brfalse) || x.Match(OpCodes.Brtrue));
-                Instruction branchingInstr = c.Prev;
-                var target = branchingInstr.Operand;
-
-                // Remove all IL that created the boolean
-                c.GotoPrev(MoveType.Before, x => x.MatchCallvirt<PlayerData>("GetInt"));
-                int startIndex = c.Index;
-                int endIndex = il.Body.Instructions.IndexOf(branchingInstr);
-                c.Index = startIndex;
-                c.RemoveRange(endIndex - startIndex);
-
-                // Inject delegate result
-                c.EmitDelegate(ElegyBeamCondition);
-                c.Emit(OpCodes.Brfalse, target);
+                // At this point the GetBool result is on the stack.
+                // Replace it with our delegate value.
+                c.EmitDelegate(GrubberflyBeamCondition);
+                c.Emit(OpCodes.Pop); // discard original GetBool bool
             }
+
+
+            // Reset cursor for Fury
+            c.Index = 0;
+
+            // -------------------------------------------------------
+            // PATCH ALL 3 FURY BEAM CONDITIONS
+            // -------------------------------------------------------
             for (int i = 0; i < 3; i++)
             {
-                c.GotoNext(
-                    MoveType.Before,
-                    x => x.MatchCallvirt<PlayerData>("GetInt"),    
-                    x => x.Match(OpCodes.Ldc_I4_1)                 
-                );
-
-                c.GotoNext(MoveType.After, x => x.Match(OpCodes.Brfalse) || x.Match(OpCodes.Brtrue));
-                Instruction branch = c.Prev;
-                var brTarget = branch.Operand;
-
-                c.GotoPrev(MoveType.Before, x => x.MatchCallvirt<PlayerData>("GetInt"));
-                int start = c.Index;
-                int end = il.Body.Instructions.IndexOf(branch);
-                c.Index = start;
-                c.RemoveRange(end - start);
+                // Find: ldstr "equippedCharm_6" → callvirt GetBool
+                if (!c.TryGotoNext(
+                    MoveType.After,
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld<HeroController>("playerData"),
+                    x => x.MatchLdstr("equippedCharm_6"),
+                    x => x.MatchCallvirt<PlayerData>("GetBool")
+                ))
+                {
+                    CharmsRebalanced.LogMessage($"FuryCond matcher {i} FAILED");
+                    break;
+                }
 
                 c.EmitDelegate(FuryCondition);
-                c.Emit(OpCodes.Brfalse, brTarget);
+                c.Emit(OpCodes.Pop);
             }
         }
-        private static bool ElegyBeamCondition()
+
+        private static bool GrubberflyBeamCondition()
         {
             CharmsRebalanced.LogMessage("Elegy1");
             return !FuryCondition();

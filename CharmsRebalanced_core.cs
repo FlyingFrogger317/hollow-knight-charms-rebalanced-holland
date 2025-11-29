@@ -10,7 +10,7 @@ namespace CharmsRebalanced
     {
         internal static CharmsRebalanced Instance;
         internal static string ModDisplayName = "Charms Rebalanced";
-        internal static string version = "1.0.1.5";
+        internal static string version = "1.0.2.3";
         public CharmsRebalanced() : base(ModDisplayName) { }
         public override string GetVersion()
         {
@@ -82,6 +82,7 @@ namespace CharmsRebalanced
                     saveSettings.radDead = true;
                 }
             };
+            ILHooks.AutoRegisterAll();
             ILHooks.EnableAll();
             Log("Loaded");
         }
@@ -284,9 +285,9 @@ namespace CharmsRebalanced
         {
             var b = new Modmenus.ModMenuScreenBuilder("Charm Row 2", parent);
 
-            AddPatch(b, "Fragile/Unbreakable Heart Patch", "fragile_unbreakable_heart");
-            AddPatch(b, "Fragile/Unbreakable Greed Patch", "fragile_unbreakable_greed");
-            AddPatch(b, "Fragile/Unbreakable Strength Patch", "fragile_unbreakable_strength");
+            AddPatch(b, "Fragile Heart Patch", "fragile_heart");
+            AddPatch(b, "Fragile Greed Patch", "fragile_greed");
+            AddPatch(b, "Fragile Strength Patch", "fragile_strength");
             AddPatch(b, "Spell Twister Patch", "spell_twister");
             AddPatch(b, "Steady Body Patch", "steady_body");
             AddPatch(b, "Heavy Blow Patch", "heavy_blow");

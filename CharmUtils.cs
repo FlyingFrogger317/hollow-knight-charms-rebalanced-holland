@@ -26,7 +26,7 @@ namespace CharmsRebalanced
             switch (charmName)
             {
                 case "carefree_melody":
-                    if (PlayerData.instance.grimmChildLevel == 5)
+                    if (PlayerData.instance.grimmChildLevel == 5 ^ inverted)
                     {
                         data = new CharmData("grimmchild");
                         data.charmName = "carefree_melody";
@@ -36,7 +36,7 @@ namespace CharmsRebalanced
                     retval = new CharmData();
                     break;
                 case "grimmchild_0":
-                    if (PlayerData.instance.grimmChildLevel == 1)
+                    if (PlayerData.instance.grimmChildLevel == 1 ^ inverted)
                     {
                         data = new CharmData("grimmchild");
                         data.charmName = "grimmchild_0";
@@ -46,7 +46,7 @@ namespace CharmsRebalanced
                     retval = new CharmData();
                     break;
                 case "grimmchild_1":
-                    if (PlayerData.instance.grimmChildLevel == 2)
+                    if (PlayerData.instance.grimmChildLevel == 2 ^ inverted)
                     {
                         data = new CharmData("grimmchild");
                         data.charmName = "grimmchild_1";
@@ -56,7 +56,7 @@ namespace CharmsRebalanced
                     retval = new CharmData();
                     break;
                 case "grimmchild_2":
-                    if (PlayerData.instance.grimmChildLevel == 3)
+                    if (PlayerData.instance.grimmChildLevel == 3 ^ inverted)
                     {
                         data = new CharmData("grimmchild");
                         data.charmName = "grimmchild_2";
@@ -66,7 +66,7 @@ namespace CharmsRebalanced
                     retval = new CharmData();
                     break;
                 case "grimmchild_3":
-                    if (PlayerData.instance.grimmChildLevel == 4)
+                    if (PlayerData.instance.grimmChildLevel == 4 ^ inverted)
                     {
                         data = new CharmData("grimmchild");
                         data.charmName = "grimmchild_3";
@@ -76,7 +76,7 @@ namespace CharmsRebalanced
                     retval = new CharmData();
                     break;
                 case "kingsoul":
-                    if (PlayerData.instance.royalCharmState == 2)
+                    if (PlayerData.instance.royalCharmState == 2 ^ inverted)
                     {
                         data = new CharmData("kingsoul");
                         retval = data;
@@ -85,16 +85,17 @@ namespace CharmsRebalanced
                     retval = new CharmData();
                     break;
                 case "void_heart":
-                    if (PlayerData.instance.gotShadeCharm)
+                    if (PlayerData.instance.gotShadeCharm ^ inverted)
                     {
                         data = new CharmData("kingsoul");
                         data.charmName = "void_heart";
                         retval = data;
+                        break;
                     }
                     retval = new CharmData();
                     break;
                 case "voidsoul":
-                    if (CharmsRebalanced.Instance.saveSettings.radDead)
+                    if (CharmsRebalanced.Instance.saveSettings.radDead ^ inverted)
                     {
                         data = new CharmData("kingsoul");
                         data.charmName = "voidsoul";
@@ -106,18 +107,7 @@ namespace CharmsRebalanced
                 default:
                     return null;
             }
-            if (inverted && retval.charmName != "")
-            {
-                return new CharmData();
-            }
-            else if (inverted && retval.charmName == "")
-            {
-                return new CharmData(charmName);
-            }
-            else
-            {
-                return retval;
-            }
+            return retval;
         }
         public static CharmData[] GetCharmsIfEquippedOrNot(params string[] charmNames)
         {
@@ -127,27 +117,50 @@ namespace CharmsRebalanced
                 var special = GetExtraCharmData(charmName);
                 if (special != null)
                 {
-                    if (CharmsRebalanced.Config.PatchesEnabled[charmNames[special.charmId]] == false)
+                    if (special.charmName == "")
                     {
                         continue;
                     }
+                    // FIRST check if special.charmName exists in config
+                    if (CharmsRebalanced.Config.PatchesEnabled.TryGetValue(special.charmName, out bool enabledSpecial))
+                    {
+                        if (!enabledSpecial)
+                            continue; // special charm disabled explicitly
+                    }
+                    else
+                    {
+                        // OTHERWISE fallback to checking base charm
+                        string baseCharm = CharmUtils.charmNames[special.charmId];
+                        if (!CharmsRebalanced.Config.PatchesEnabled.TryGetValue(baseCharm, out bool enabledBase) || !enabledBase)
+                            continue;
+                    }
+
                     if (special.equipped)
                     {
                         equippedCharms.Add(special);
                     }
                     continue;
                 }
-                if (CharmsRebalanced.Config.PatchesEnabled[charmName] == false)
-                {
-                    continue;
-                }
                 if (charmName[0] == '!')
                 {
-                    CharmData charmDataNeg = GetCharm(charmName.Substring(1));
-                    if (!charmDataNeg.equipped)
+                    string realCharmName = charmName.Substring(1);
+                    bool disabled = !CharmsRebalanced.Config.PatchesEnabled[realCharmName];
+
+                    if (disabled)
                     {
-                        equippedCharms.Add(charmDataNeg);
+                        equippedCharms.Add(new CharmData(realCharmName)); 
+                        continue;
                     }
+
+                    CharmData neg = GetCharm(realCharmName);
+                    if (!neg.equipped)
+                        equippedCharms.Add(neg);
+
+                    continue;
+                }
+
+                if (CharmsRebalanced.Config.PatchesEnabled[charmName] == false)
+                {
                     continue;
                 }
                 CharmData charmData = GetCharm(charmName);
@@ -210,22 +223,24 @@ namespace CharmsRebalanced
         private static Dictionary<string, int> charmInts = charmNames.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
         public class CharmData
         {
-            public int charmId => charmInts[charmName];
+            public int charmId;
             public int costChange => CharmUtils.charmCostChange.TryGetValue(charmName, out int change) ? change : 0;
             public string charmName;
             internal CharmData(string charmName)
             {
                 this.charmName = charmName;
+                this.charmId = charmInts[charmName];
             }
             internal CharmData()
             {
                 this.charmName = "";
+                this.charmId = -1;
             }
             public bool equipped
             {
                 get
                 {
-                    return PlayerData.instance.GetBool($"equippedCharm_{charmId}");
+                    return charmId==-1?false:PlayerData.instance.GetBool($"equippedCharm_{charmId}");
                 }
             }
         }
