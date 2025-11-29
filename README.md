@@ -13,4 +13,4 @@ Hollow Knight game mod: Rebalances charms to be close to the rebalance described
 - Dashmaster: 
 - Sprintmaster: Works in air (50% done)
 - Grubsong: No changes
-- Grubberfly's Elegy: 0% done
+- Grubberfly's Elegy: 33% done, works even not at max health

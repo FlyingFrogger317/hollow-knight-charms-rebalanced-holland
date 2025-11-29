@@ -187,7 +187,7 @@ namespace CharmsRebalanced
             { 14, "steady_body" },//no changes
             { 15, "heavy_blow" },
             { 16, "sharp_shadow" },
-            { 17, "spore_shroom" },
+            { 17, "spore_shroom" },//effects full screen
             { 18, "longnail" },
             { 19, "shaman_stone" },//rework
             { 20, "soul_catcher" },//done

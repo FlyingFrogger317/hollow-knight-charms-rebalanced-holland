@@ -4,13 +4,14 @@ using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
 using System.Linq;
+using System.Reflection;
 namespace CharmsRebalanced
 {
     public class CharmsRebalanced : Mod, ITogglableMod, ICustomMenuMod, IGlobalSettings<CharmsRebalanced.Config._Config.GlobalSettings>, ILocalSettings<CharmsRebalanced.SaveModSettings>
     {
         internal static CharmsRebalanced Instance;
         internal static string ModDisplayName = "Charms Rebalanced";
-        internal static string version = "1.0.3.0";
+        internal static string version = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString();
         public CharmsRebalanced() : base(ModDisplayName) { }
         public override string GetVersion()
         {
@@ -84,13 +85,92 @@ namespace CharmsRebalanced
             };
             ILHooks.AutoRegisterAll();
             ILHooks.EnableAll();
+            On.UIManager.TogglePauseGame += UpdateConsts;
             Log("Loaded");
         }
         public void Unload()
         {
             UsedHooks.UnregisterAllHooks();
             ILHooks.DisableAll();
+            ValueOverrides.SetOrigAll();
             Log("Unloaded");
+        }
+        public void UpdateConsts(On.UIManager.orig_TogglePauseGame orig, UIManager self)
+        {
+            bool willBePaused = GameManager.instance.isPaused;
+            orig(self);
+            if (!willBePaused)
+            {
+                ValueOverrides.SetAll();
+            }
+        }
+        public void OnSaveLoad()
+        {
+            CharmMods.CreateConstEdits();
+            ValueOverrides.SetAll();
+        }
+        public static class ValueOverrides
+        {
+            private abstract class ValueOverride
+            {
+                public abstract void Set();
+                public abstract void SetOrig();
+                public abstract void SetModded();
+            };
+            private class ValueOverride<T> : ValueOverride
+            {
+                T orig;
+                T modded;
+                Action<T> setter;
+                string charm;
+                public ValueOverride(T orig, T modded, Action<T> setter, string charm)
+                {
+                    this.orig = orig;
+                    this.modded = modded;
+                    this.setter = setter;
+                    this.charm = charm;
+                }
+                public override void Set()
+                {
+                    bool isModded = Config.PatchesEnabled[charm];
+                    if (isModded)
+                    {
+                        SetModded();
+                    }
+                    else
+                    {
+                        SetOrig();
+                    }
+                }
+                public override void SetModded()
+                {
+                    setter(modded);
+                }
+                public override void SetOrig()
+                {
+                    setter(orig);
+                }
+            }
+            private static List<ValueOverride> CharmValueOverrides = new();
+            public static void RegisterValueOverride<T>(T orig, T modded, Action<T> setter, string charm)
+            {
+                CharmsRebalanced.Instance.Log($"new val override, {orig}->{modded}");
+                CharmValueOverrides.Add(new ValueOverride<T>(orig, modded, setter, charm));
+            }
+            public static void SetAll()
+            {
+                foreach (var item in CharmValueOverrides)
+                {
+                    item.Set();
+                }
+            }
+            public static void SetOrigAll()
+            {
+                foreach (var item in CharmValueOverrides)
+                {
+                    item.SetOrig();
+                }
+            }
         }
         public class SaveModSettings
         {
