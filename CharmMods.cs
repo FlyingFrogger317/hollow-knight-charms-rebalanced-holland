@@ -75,19 +75,19 @@ namespace CharmsRebalanced
                 if (total > 0) HeroController.instance.AddGeoQuietly(total);
                 return null;
             });
-            RegisterCharmHandler(CharmsRebalanced.UsableHook.AfterDamage, ["carefree_melody", "!stalwart_shell"], args =>
+            RegisterCharmHandler(CharmsRebalanced.UsableHook.AfterDamage, ["carefree_melody", "!stalwart"], args =>
             {
                 int damage = (int)args[0];
                 damage = CalcDamageForShield(damage);
                 return damage;
             });
-            RegisterCharmHandler(CharmsRebalanced.UsableHook.AfterDamage, ["!carefree_melody", "stalwart_shell"], args =>
+            RegisterCharmHandler(CharmsRebalanced.UsableHook.AfterDamage, ["!carefree_melody", "stalwart"], args =>
             {
                 int damage = (int)args[0];
                 damage = CalcDamageForShield(damage);
                 return damage;
             });
-            RegisterCharmHandler(CharmsRebalanced.UsableHook.AfterDamage, ["carefree_melody", "stalwart_shell"], args =>
+            RegisterCharmHandler(CharmsRebalanced.UsableHook.AfterDamage, ["carefree_melody", "stalwart"], args =>
             {
                 int damage = (int)args[0];
                 damage = CalcDamageForShield(damage);

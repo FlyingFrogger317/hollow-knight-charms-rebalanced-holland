@@ -5,6 +5,7 @@ using System;
 using System.Reflection;
 using System.Linq;
 using System.IO;
+using MonoMod.RuntimeDetour;
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class AutoInit : Attribute {}
 // All IL hooks go here
@@ -77,6 +78,13 @@ namespace CharmsRebalanced
             setc.Goto(id);
             setc.Next.OpCode = opCode;
             setc.Next.Operand = operand;
+        }
+        public static void PopEmit(this ILContext il, int id, OpCode opCode, object operand)
+        {
+            ILCursor setc = new(il);
+            setc.Goto(id + 1);
+            setc.Emit(OpCodes.Pop);
+            setc.Emit(opCode, operand);
         }
         public static ILLabel NewLabel(this ILContext il, int id)
         {
@@ -209,8 +217,41 @@ namespace CharmsRebalanced
         }
         public static void Patch(ILContext il)
         {
-            il.Set(64, OpCodes.Ldc_I4_0, null);
-            il.DumpIL("TakeDamgae");
+            il.PopEmit(64, OpCodes.Ldc_I4_0, null);
+        }
+    }
+    [AutoInit]
+    public static class StalwartShellDelegateExtraIFrames
+    {
+        private static ILHook thisHook;
+        public static void Enable()
+        {
+            if (CharmsRebalanced.Config.PatchesEnabled["stalwart"])
+            {
+                var nested = typeof(HeroController)
+                    .GetNestedTypes(BindingFlags.NonPublic)
+                    .First(t => t.Name.Contains("StartRecoil"));
+
+                var moveNext = nested.GetMethod("MoveNext", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                thisHook = new ILHook(moveNext, Patch);
+            }
+        }
+        public static void Disable()
+        {
+            thisHook.Dispose();
+            thisHook = null;
+        }
+        public static void Patch(ILContext il)
+        {
+            il.NopRange(102, 105);
+            il.Set(105, OpCodes.Call, cond);
+        }
+        public static bool cond()
+        {
+            bool extraIFrames = CharmMods.shouldGiveExtraIFrames;
+            if (extraIFrames) CharmMods.shouldGiveExtraIFrames = false;
+            return extraIFrames;
         }
     }
 }

@@ -6,7 +6,7 @@ Hollow Knight game mod: Rebalances charms to be close to the rebalance described
 # Current patches:
 - Gathering Swarm: 0% done
 - Wayward Compass: No changes
-- Stalwart Shell: Everything done except extra IFrames, 80% done
+- Stalwart Shell: Everything done except graphic shield cue, untested
 - Soul Catcher: -1 charm notch, -1 soul gain per nail hit
 - Shaman Stone: 0% done
 - Soul Eater: -1 charm notch, -2 soul gain per nail hit (66% done), decrease cast time
@@ -15,3 +15,4 @@ Hollow Knight game mod: Rebalances charms to be close to the rebalance described
 - Grubsong: No changes
 - Grubberfly's Elegy: Now works even when not at max health, and gives 50% of a normal nail hit in soul
 - Spell Twister: No changes
+- Carefree Melody: Everything done except graphic shield cue, untested
