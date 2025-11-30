@@ -161,7 +161,6 @@ namespace CharmsRebalanced
 
         private static void Patch(ILContext il)
         {
-            il.DumpIL("initial");
             MethodInfo condElegy = typeof(GrubberflyRemoveMaxHealthRestraint)
                 .GetMethod("GrubberflyBeamCondition", BindingFlags.Static | BindingFlags.NonPublic);
             MethodInfo condFury = typeof(GrubberflyRemoveMaxHealthRestraint)
@@ -176,27 +175,42 @@ namespace CharmsRebalanced
             il.NopRange(289, 304);
             il.Set(304, OpCodes.Call, condFury);
             il.Set(305, OpCodes.Brfalse, il.NewLabel(489));
-            il.NopRange(368,388);
+            il.NopRange(368, 388);
             il.Set(388, OpCodes.Call, condElegy);
             il.NopRange(431, 446);
             il.Set(446, OpCodes.Call, condFury);
             il.Set(447, OpCodes.Brfalse, il.NewLabel(489));
-            il.DumpIL("final");
         }
         //false means fury, true means normal
         private static bool GrubberflyBeamCondition()
         {
-            CharmsRebalanced.LogMessage("Elegy");
             bool hasFuryEquipped = CharmUtils.GetCharm("fury").equipped;
             bool willFuryApply = PlayerData.instance.health <= 3;
-            CharmsRebalanced.LogMessage(hasFuryEquipped.ToString());
-            CharmsRebalanced.LogMessage(willFuryApply.ToString());
-            CharmsRebalanced.LogMessage((hasFuryEquipped && willFuryApply).ToString());
             return !(hasFuryEquipped && willFuryApply);
         }
         private static bool FuryBeamCondition()
         {
             return !GrubberflyBeamCondition();
+        }
+    }
+    [AutoInit]
+    public static class CarefreeMelodyPatchOut
+    {
+        public static void Enable()
+        {
+            if (CharmsRebalanced.Config.PatchesEnabled["carefree_melody"])
+            {
+                IL.HeroController.TakeDamage += Patch;
+            }
+        }
+        public static void Disable()
+        {
+            IL.HeroController.TakeDamage -= Patch;
+        }
+        public static void Patch(ILContext il)
+        {
+            il.Set(64, OpCodes.Ldc_I4_0, null);
+            il.DumpIL("TakeDamgae");
         }
     }
 }

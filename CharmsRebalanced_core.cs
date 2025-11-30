@@ -11,13 +11,14 @@ namespace CharmsRebalanced
     {
         internal static CharmsRebalanced Instance;
         internal static string ModDisplayName = "Charms Rebalanced";
-        internal static string version = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString();
+        internal static string version = Assembly.GetExecutingAssembly().GetName().Version!.ToString();
         public CharmsRebalanced() : base(ModDisplayName) { }
         public override string GetVersion()
         {
             return version;
         }
-        public static void LogMessage(string message) {
+        public static void LogMessage(string message)
+        {
             Instance.Log(message);
         }
         private static class UsedHooks
@@ -83,9 +84,20 @@ namespace CharmsRebalanced
                     saveSettings.radDead = true;
                 }
             };
+            ModHooks.AfterTakeDamageHook += (int hazType, int damage) =>
+            {
+                int? retVal = RunHandlers<int?>(UsableHook.AfterDamage, damage);
+                return retVal ?? damage;
+            };
+            On.GameManager.BeginSceneTransition += (orig, self, sceneLoadData) =>
+            {
+                RunHandlers(UsableHook.BeforeLoad, null);
+                orig(self, sceneLoadData);
+            };
             ILHooks.AutoRegisterAll();
             ILHooks.EnableAll();
             On.UIManager.TogglePauseGame += UpdateConsts;
+            On.HeroController.Start += OnSaveLoad;
             Log("Loaded");
         }
         public void Unload()
@@ -97,15 +109,19 @@ namespace CharmsRebalanced
         }
         public void UpdateConsts(On.UIManager.orig_TogglePauseGame orig, UIManager self)
         {
+            LogMessage("pauseToggle");
             bool willBePaused = GameManager.instance.isPaused;
             orig(self);
             if (!willBePaused)
             {
                 ValueOverrides.SetAll();
+                ILHooks.DisableAll();
+                ILHooks.EnableAll();
             }
         }
-        public void OnSaveLoad()
+        public void OnSaveLoad(On.HeroController.orig_Start orig, HeroController self)
         {
+            orig(self);
             CharmMods.CreateConstEdits();
             ValueOverrides.SetAll();
         }
@@ -268,9 +284,9 @@ namespace CharmsRebalanced
             }
         }
         public void OnLoadGlobal(CharmsRebalanced.Config._Config.GlobalSettings s)
-            {
-                CharmsRebalanced.Config._Config.settingsInstance = s;
-            }
+        {
+            CharmsRebalanced.Config._Config.settingsInstance = s;
+        }
         public CharmsRebalanced.Config._Config.GlobalSettings OnSaveGlobal()
         {
             return CharmsRebalanced.Config._Config.settingsInstance;
@@ -456,7 +472,9 @@ namespace CharmsRebalanced
         public enum UsableHook
         {
             CharmUpdate,
-            SoulGain
+            SoulGain,
+            BeforeLoad,
+            AfterDamage
         }
         private class HandlerList : List<(string[], CharmHandler)> { };
         private Dictionary<UsableHook, HandlerList> RegisteredHandlers = Enum.GetValues(typeof(UsableHook)).Cast<UsableHook>().ToDictionary(hook => hook, hook => new HandlerList());
@@ -469,5 +487,89 @@ namespace CharmsRebalanced
             RegisteredHandlers[hook].Add((charms, handler));
         }
 #nullable disable
+        public static class Timers
+        {
+            private static Dictionary<string, ThresholdTimer> timers = new();
+
+            private class ThresholdTimer
+            {
+                private float[] limits;     // sorted from smallest → largest
+                private bool[] passed;      // whether each limit has been crossed
+                private float timer = 0f;   // current elapsed time
+                private float max;          // largest limit
+
+                public ThresholdTimer(float[] limits)
+                {
+                    if (limits == null || limits.Length == 0)
+                        throw new ArgumentException("Timer must have at least one limit.");
+
+                    // clone & sort limits
+                    this.limits = limits.OrderBy(x => x).ToArray();
+
+                    passed = new bool[this.limits.Length];
+                    max = this.limits[this.limits.Length - 1];
+                }
+
+                public void Reset()
+                {
+                    timer = 0f;
+                    for (int i = 0; i < passed.Length; i++)
+                        passed[i] = false;
+                }
+
+                public void Update()
+                {
+                    if (timer >= max)
+                        return; // finished
+
+                    timer += Time.deltaTime;
+
+                    // check thresholds
+                    for (int i = 0; i < limits.Length; i++)
+                    {
+                        if (!passed[i] && timer >= limits[i])
+                        {
+                            passed[i] = true;
+                            // optionally fire callbacks here
+                        }
+                    }
+                }
+
+                public bool GetCond(int index)
+                {
+                    if (index < 0 || index >= passed.Length)
+                        return false;
+                    return passed[index];
+                }
+            }
+
+            // --- Public API ---
+            public static void Declare(string name, float[] limits)
+                => timers[name] = new ThresholdTimer(limits);
+
+            public static void Reset(string name)
+            {
+                if (timers.TryGetValue(name, out var t))
+                    t.Reset();
+            }
+
+            public static bool GetCond(string name, int index)
+            {
+                if (!timers.TryGetValue(name, out var t))
+                    return false;
+                return t.GetCond(index);
+            }
+
+            private static void UpdateAll()
+            {
+                foreach (var t in timers.Values)
+                    t.Update();
+            }
+
+            static Timers()
+            {
+                ModHooks.HeroUpdateHook += UpdateAll;
+            }
+        }
     }
 }
