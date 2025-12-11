@@ -5,11 +5,11 @@ Hollow Knight game mod: Rebalances charms to be close to the rebalance described
 - Multiple presets
 # New Effects:
 - Gathering Swarm: ![Charm Notch](charmNotchSmall.png)
-- Wayward Compass: No changes
-- Stalwart Shell: Blocks all damage from the next attack you recieve, and increases I-Frames by 50%. Takes 30 seconds to recharge.
-- Soul Catcher: Gain 2 additional SOUL when striking with the Nail.
-- Shaman Stone: 
-- Soul Eater: -1 charm notch, -2 soul gain per nail hit (66% done), decrease cast time
+- Wayward Compass: ![Charm Notch](charmNotchSmall.png)No changes
+- Stalwart Shell: ![Charm Notch](charmNotchSmall.png)![Charm Notch](charmNotchSmall.png)![Charm Notch](charmNotchSmall.png)Blocks all damage from the next attack you recieve, and increases I-Frames by 50%. Takes 30 seconds to recharge.
+- Soul Catcher: ![Charm Notch](charmNotchSmall.png)Gain 2 additional SOUL when striking with the Nail.
+- Shaman Stone: ![Charm Notch](charmNotchSmall.png)![Charm Notch](charmNotchSmall.png)![Charm Notch](charmNotchSmall.png)Increases Spell damage by 25%, and makes Vengeful Spirit/Shade Soul 33% bigger
+- Soul Eater: ![Charm Notch](charmNotchSmall.png)![Charm Notch](charmNotchSmall.png)![Charm Notch](charmNotchSmall.png) -1 charm notch, -2 soul gain per nail hit (66% done), decrease cast time
 - Dashmaster: Shade Cloak cooldown -33%
 - Sprintmaster: Works in air, and bonus buffed to 30%
 - Grubsong: No changes
