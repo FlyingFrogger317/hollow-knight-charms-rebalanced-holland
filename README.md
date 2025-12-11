@@ -4,7 +4,7 @@ Hollow Knight game mod: Rebalances charms to be close to the rebalance described
 - Togglable patches for each charm
 - Multiple presets
 # New Effects:
-- Gathering Swarm: ![Charm Notch](charmNotch.png)
+- Gathering Swarm: ![Charm Notch](charmNotchSmall.png)
 - Wayward Compass: No changes
 - Stalwart Shell: Blocks all damage from the next attack you recieve, and increases I-Frames by 50%. Takes 30 seconds to recharge.
 - Soul Catcher: Gain 2 additional SOUL when striking with the Nail.
