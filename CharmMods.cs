@@ -1,4 +1,7 @@
 using System;
+using System.Collections;
+using System.IO;
+using Modding;
 using UnityEngine;
 namespace CharmsRebalanced
 {
@@ -78,19 +81,19 @@ namespace CharmsRebalanced
             RegisterCharmHandler(CharmsRebalanced.UsableHook.AfterDamage, ["carefree_melody", "!stalwart"], args =>
             {
                 int damage = (int)args[0];
-                damage = CalcDamageForShield(damage);
+                damage = ShieldSystem.CalcDamageForShield(damage);
                 return damage;
             });
             RegisterCharmHandler(CharmsRebalanced.UsableHook.AfterDamage, ["!carefree_melody", "stalwart"], args =>
             {
                 int damage = (int)args[0];
-                damage = CalcDamageForShield(damage);
+                damage = ShieldSystem.CalcDamageForShield(damage);
                 return damage;
             });
             RegisterCharmHandler(CharmsRebalanced.UsableHook.AfterDamage, ["carefree_melody", "stalwart"], args =>
             {
                 int damage = (int)args[0];
-                damage = CalcDamageForShield(damage);
+                damage = ShieldSystem.CalcDamageForShield(damage);
                 return damage;
             });
             CharmsRebalanced.Timers.Declare("ShieldCarefreeSteady", [Config.carefreeShellCooldown, Config.carefreeCooldown, Config.shellCooldown]);
@@ -107,7 +110,6 @@ namespace CharmsRebalanced
         }
         public static void CreateConstEdits()
         {
-            CharmsRebalanced.Instance.Log("edits");
             if (hasCreatedConsts) return;
             //put all logic for HeroController consts here, like quick slash and dashmaster
             RegisterValueOverride<float>(HeroController.instance.ATTACK_COOLDOWN_TIME_CH, 0.287f, v => HeroController.instance.ATTACK_COOLDOWN_TIME_CH = v, "quick_slash");
@@ -117,75 +119,115 @@ namespace CharmsRebalanced
             RegisterValueOverride<float>(HeroController.instance.SHADOW_DASH_COOLDOWN, 1.0f, v => HeroController.instance.SHADOW_DASH_COOLDOWN = v, "dashmaster");
             hasCreatedConsts = true;
         }
-        static int CalcDamageForShield(int damage)
+        public static bool shouldFuryApply()
         {
-            bool carefree = CharmUtils.GetCharm("carefree_melody").equipped;
-            bool shell = CharmUtils.GetCharm("stalwart_shell").equipped;
-            bool heart = CharmUtils.GetCharm("fragile_heart").equipped;
-            if (carefree) damage = 12;
-            bool cdReady = false;
-            if (carefree && shell)
-            {
-                cdReady = CharmsRebalanced.Timers.GetCond("ShieldCarefreeSteady", 0);
-            }
-            else if (carefree)
-            {
-                cdReady = CharmsRebalanced.Timers.GetCond("ShieldCarefreeSteady", 1);
-            }
-            else
-            {
-                cdReady = CharmsRebalanced.Timers.GetCond("ShieldCarefreeSteady", 2);
-            }
-            if (cdReady && shieldCharges == 0)
-            {
-                CharmsRebalanced.Timers.Reset("ShieldCarefreeSteady");
-                shieldCharges = heart && carefree ? 2 : 1;
-            }
-            if (shieldCharges > 0)
-            {
-                damage = 0;
-                shieldCharges--;
-                if (shell)
-                {
-                    var hc = HeroController.instance;
-                    typeof(HeroController).GetMethod("CancelDamageRecoil").Invoke(hc,null);
-                    shouldGiveExtraIFrames = true;
-                    // remove knockback
-                    hc.cState.recoiling = false;
-                    hc.cState.recoilingLeft = false;
-                    hc.cState.recoilingRight = false;
-                }
-            }
-            return damage;
+            bool hasFuryEquipped = CharmUtils.GetCharm("fury").equipped;
+            bool willFuryApply = PlayerData.instance.health <= 3;
+            bool retval = (hasFuryEquipped && willFuryApply);
+            if (furyForceActive) retval = true;
+            CharmsRebalanced.LogMessage($"furyApply {retval} {hasFuryEquipped} {willFuryApply}" );
+            return retval;
         }
-        private static int shieldCharges = 0;
-        public static bool shouldGiveExtraIFrames = false;
+        private static bool furyForceActive = false;
+        public static class ShieldSystem
+        {
+            public static int CalcDamageForShield(int damage)
+            {
+                bool carefree = CharmUtils.GetCharmsIfEquippedOrNot("carefree_melody").Length == 1;
+                bool shell = CharmUtils.GetCharm("stalwart").equipped;
+                bool heart = CharmUtils.GetCharm("fragile_heart").equipped;
+                if (carefree) damage = PlayerData.instance.overcharmed ? 6 : 12;
+                bool cdReady = false;
+                if (carefree && shell)
+                {
+                    cdReady = CharmsRebalanced.Timers.GetCond("ShieldCarefreeSteady", 0);
+                }
+                else if (carefree)
+                {
+                    cdReady = CharmsRebalanced.Timers.GetCond("ShieldCarefreeSteady", 1);
+                }
+                else
+                {
+                    cdReady = CharmsRebalanced.Timers.GetCond("ShieldCarefreeSteady", 2);
+                }
+                if (cdReady && shieldCharges == 0)
+                {
+                    CharmsRebalanced.Timers.Reset("ShieldCarefreeSteady");
+                    shieldCharges = heart && carefree ? 2 : 1;
+                }
+                if (shieldCharges > 0)
+                {
+                    damage = 0;
+                    shieldCharges--;
+                    if (shell)
+                    {
+                        CharmsRebalanced.LogMessage("shell");
+                        var hc = HeroController.instance;
+                        ReflectionHelper.CallMethod(hc, "CancelDamageRecoil");
+                        if (hc.GetComponent<Rigidbody2D>() is Rigidbody2D rb)
+                        {
+                            rb.velocity = Vector2.zero; // keep vertical momentum (jumping/falling), kill horizontal
+                                                        // Or fully zero if you want: rb.velocity = Vector2.zero;
+                        }
+                        shouldGiveExtraIFrames = true;
+                        // remove knockback
+                        hc.cState.recoiling = false;
+                        hc.cState.recoilingLeft = false;
+                        hc.cState.recoilingRight = false;
+                    }
+                    HeroController.instance.carefreeShield.SetActive(value: true);
+                }
+                if (shieldCharges <= 0)
+                {
+                    if (carefree)
+                    {
+                        HeroController.instance.StartCoroutine(CarefreeDownHandler());
+                    }
+                    else
+                    {
+                        HeroController.instance.StartCoroutine(ShieldDownHandler());
+                    }
+                }
+                return damage;
+            }
+            static IEnumerator CarefreeDownHandler() {
+                furyForceActive = true;
+                //show off the fact that shield down
+                yield return null;
+                furyForceActive = false;
+            }
+            static IEnumerator ShieldDownHandler() {
+                yield return null;
+            }
+            private static int shieldCharges = 0;
+            public static bool shouldGiveExtraIFrames = false;
+        }
         public class GrubberflyBeamSoul : MonoBehaviour
-        {
-            private void Awake()
             {
-                // Make sure the collider is a trigger (required for OnTriggerEnter2D)
-                var soulCol = gameObject.AddComponent<BoxCollider2D>();
-                soulCol.isTrigger = true;
-                soulCol.size = new Vector2(1f, 1f);
-            }
-
-            private void OnTriggerEnter2D(Collider2D other)
-            {
-                // Enemy layers in HK: 11 and 22 (special cases)
-                int layer = other.gameObject.layer;
-
-                if (layer == 11 || layer == 22)
+                private void Awake()
                 {
-                    int currentSoul = PlayerData.instance.GetInt("MPCharge");
-                    HeroController.instance.SoulGain();
-                    int newSoul = PlayerData.instance.GetInt("MPCharge");
-                    int diff = newSoul - currentSoul;
-                    double preciseHalf = (double)diff / 2;
-                    int half = (int)Math.Floor(preciseHalf);
-                    HeroController.instance.TakeMPQuick(half);
+                    // Make sure the collider is a trigger (required for OnTriggerEnter2D)
+                    var soulCol = gameObject.AddComponent<BoxCollider2D>();
+                    soulCol.isTrigger = true;
+                    soulCol.size = new Vector2(1f, 1f);
+                }
+
+                private void OnTriggerEnter2D(Collider2D other)
+                {
+                    // Enemy layers in HK: 11 and 22 (special cases)
+                    int layer = other.gameObject.layer;
+
+                    if (layer == 11 || layer == 22)
+                    {
+                        int currentSoul = PlayerData.instance.GetInt("MPCharge");
+                        HeroController.instance.SoulGain();
+                        int newSoul = PlayerData.instance.GetInt("MPCharge");
+                        int diff = newSoul - currentSoul;
+                        double preciseHalf = (double)diff / 2;
+                        int half = (int)Math.Floor(preciseHalf);
+                        HeroController.instance.TakeMPQuick(half);
+                    }
                 }
             }
-        }
     }
 }

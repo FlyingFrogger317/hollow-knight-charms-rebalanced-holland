@@ -17,9 +17,9 @@ namespace CharmsRebalanced
         {
             return version;
         }
-        public static void LogMessage(string message)
+        public static void LogMessage(object message)
         {
-            Instance.Log(message);
+            Instance.Log(message.ToString());
         }
         private static class UsedHooks
         {
@@ -109,7 +109,6 @@ namespace CharmsRebalanced
         }
         public void UpdateConsts(On.UIManager.orig_TogglePauseGame orig, UIManager self)
         {
-            LogMessage("pauseToggle");
             bool willBePaused = GameManager.instance.isPaused;
             orig(self);
             if (!willBePaused)
@@ -170,7 +169,6 @@ namespace CharmsRebalanced
             private static List<ValueOverride> CharmValueOverrides = new();
             public static void RegisterValueOverride<T>(T orig, T modded, Action<T> setter, string charm)
             {
-                CharmsRebalanced.Instance.Log($"new val override, {orig}->{modded}");
                 CharmValueOverrides.Add(new ValueOverride<T>(orig, modded, setter, charm));
             }
             public static void SetAll()

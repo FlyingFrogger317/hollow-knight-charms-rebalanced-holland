@@ -6,6 +6,8 @@ using System.Reflection;
 using System.Linq;
 using System.IO;
 using MonoMod.RuntimeDetour;
+using Modding;
+using Mono.Cecil;
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class AutoInit : Attribute {}
 // All IL hooks go here
@@ -192,13 +194,11 @@ namespace CharmsRebalanced
         //false means fury, true means normal
         private static bool GrubberflyBeamCondition()
         {
-            bool hasFuryEquipped = CharmUtils.GetCharm("fury").equipped;
-            bool willFuryApply = PlayerData.instance.health <= 3;
-            return !(hasFuryEquipped && willFuryApply);
+            return !CharmMods.shouldFuryApply();
         }
         private static bool FuryBeamCondition()
         {
-            return !GrubberflyBeamCondition();
+            return CharmMods.shouldFuryApply();
         }
     }
     [AutoInit]
@@ -245,13 +245,34 @@ namespace CharmsRebalanced
         public static void Patch(ILContext il)
         {
             il.NopRange(102, 105);
-            il.Set(105, OpCodes.Call, cond);
+            il.Set(105, OpCodes.Call, typeof(StalwartShellDelegateExtraIFrames).GetMethod("cond"));
         }
         public static bool cond()
         {
-            bool extraIFrames = CharmMods.shouldGiveExtraIFrames;
-            if (extraIFrames) CharmMods.shouldGiveExtraIFrames = false;
+            bool extraIFrames = CharmMods.ShieldSystem.shouldGiveExtraIFrames;
+            if (extraIFrames) CharmMods.ShieldSystem.shouldGiveExtraIFrames = false;
             return extraIFrames;
+        }
+    }
+    [AutoInit]
+    public static class FragileHeartHealthUp
+    {
+        static private ILHook hook;
+        public static void Enable()
+        {
+            if (CharmsRebalanced.Config.PatchesEnabled["fragile_heart"])
+            {
+                MethodInfo methodInfo = ReflectionHelper.GetMethodInfo(typeof(HeroController), "orig_CharmUpdate");
+                hook = new(methodInfo, Patch);
+            }
+        }
+        public static void Disable()
+        {
+            hook?.Dispose();
+        }
+        public static void Patch(ILContext il)
+        {
+            il.Set(30, OpCodes.Ldc_I4_3, null);
         }
     }
 }

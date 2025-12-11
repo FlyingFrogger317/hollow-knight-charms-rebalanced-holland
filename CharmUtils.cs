@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 namespace CharmsRebalanced
@@ -13,7 +14,7 @@ namespace CharmsRebalanced
         {
             return new CharmData(charmName);
         }
-        public static CharmData GetExtraCharmData(string charmName)
+        public static (CharmData, bool) GetExtraCharmData(string charmName)
         {
             bool inverted = false;
             CharmData retval = null;
@@ -105,16 +106,16 @@ namespace CharmsRebalanced
                     retval = new CharmData();
                     break;
                 default:
-                    return null;
+                    return (null,inverted);
             }
-            return retval;
+            return (retval,inverted);
         }
         public static CharmData[] GetCharmsIfEquippedOrNot(params string[] charmNames)
         {
             List<CharmData> equippedCharms = new List<CharmData>();
             foreach (string charmName in charmNames)
             {
-                var special = GetExtraCharmData(charmName);
+                var (special, invert) = GetExtraCharmData(charmName);
                 if (special != null)
                 {
                     if (special.charmName == "")
@@ -134,7 +135,7 @@ namespace CharmsRebalanced
                             continue;
                     }
 
-                    if (special.equipped)
+                    if (special.equipped ^ invert)
                     {
                         equippedCharms.Add(special);
                     }
@@ -174,7 +175,7 @@ namespace CharmsRebalanced
             { 1, "swarm" },//need screen leave clear
             { 2, "compass" },//no changes
             { 3, "grubsong" },//done, no changes
-            { 4, "stalwart" },//total overhaul
+            { 4, "stalwart" },//total overhaul, done
             { 5, "baldur" },//total overhaul
             { 6, "fury" },//total overhaul
             { 7, "quick_focus" },//no changes
