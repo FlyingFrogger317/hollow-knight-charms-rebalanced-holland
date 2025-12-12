@@ -5,6 +5,7 @@ using System.Collections;
 using UnityEngine;
 using System.Linq;
 using System.Reflection;
+using HutongGames.PlayMaker;
 namespace CharmsRebalanced
 {
     public class CharmsRebalanced : Mod, ITogglableMod, ICustomMenuMod, IGlobalSettings<CharmsRebalanced.Config._Config.GlobalSettings>, ILocalSettings<CharmsRebalanced.SaveModSettings>
@@ -93,6 +94,13 @@ namespace CharmsRebalanced
             {
                 RunHandlers(UsableHook.BeforeLoad, null);
                 orig(self, sceneLoadData);
+            };
+            ModHooks.HitInstanceHook+= (HutongGames.PlayMaker.Fsm owner, HitInstance inst)=>{
+                foreach (var field in inst.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public))
+                {
+                    CharmsRebalanced.LogMessage($"{field} {field.GetValue(inst)}");
+                }
+                return inst;
             };
             ILHooks.AutoRegisterAll();
             ILHooks.EnableAll();

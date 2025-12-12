@@ -4,15 +4,15 @@ Hollow Knight game mod: Rebalances charms to be close to the rebalance described
 - Togglable patches for each charm
 - Multiple presets
 # New Effects:
-- Gathering Swarm:
+- Gathering Swarm: Gathers Geo from the screen. All Geo left on the screen when you leave is auto-collected. Untested with Large Geo
 - Wayward Compass: No changes
 - Stalwart Shell: Blocks all damage from the next attack you recieve, and increases I-Frames by 50%. Takes 30 seconds to recharge.
 - Soul Catcher: Gain 2 additional SOUL when striking with the Nail.
 - Shaman Stone: 
 - Soul Eater: -1 charm notch, -2 soul gain per nail hit (66% done), decrease cast time
-- Dashmaster: Shade Cloak cooldown -33%
+- Dashmaster: Shade Cloak cooldown -33%. NOTE: Graphic Effect for Recharge still takes 1.5s
 - Sprintmaster: Works in air, and bonus buffed to 30%
-- Grubsong: No changes
+- Grubsong: Gain 15 soul for each mask lost, 25 with Grubberfly's Elegy.
 - Grubberfly's Elegy: Now works even when not at max health, and gives 50% of a normal nail hit in soul
 - Heart: Grants 3 extra Masks
 - Greed: Grants 
@@ -55,7 +55,7 @@ Hollow Knight game mod: Rebalances charms to be close to the rebalance described
 - Soul Eater: decrease cast time
 - Dashmaster: Shade Cloak cooldown -33%
 - Sprintmaster: done
-- Grubsong: No changes
+- Grubsong: update animation speed
 - Grubberfly's Elegy: done
 - Fragile Heart:
 - Fragile Greed:

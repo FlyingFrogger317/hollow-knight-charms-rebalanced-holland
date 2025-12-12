@@ -51,28 +51,25 @@ namespace CharmsRebalanced
             });
             RegisterCharmHandler(CharmsRebalanced.UsableHook.BeforeLoad, "swarm", args =>
             {
-                int total = 0;
-                foreach (var fsm in GameObject.FindObjectsOfType<PlayMakerFSM>())
+                GameObject[] objs=GameObject.FindObjectsOfType<GameObject>();
+                int total=0;
+                int geoAmountSmall=1;
+                int geoAmountMedium=5;
+                int geoAmountLarge=25;
+                foreach(GameObject go in objs)
                 {
-                    if (fsm.FsmName == "Geo Control")
+                    if (go.name.Contains("Geo Small"))
                     {
-                        string state = fsm.ActiveStateName;
-
-                        bool carrying =
-                            state == "Fly To Hero" ||
-                            state.Contains("Home") ||
-                            state.Contains("Return");   // some variants use "Return"
-
-                        if (carrying)
-                        {
-                            int amount = fsm.FsmVariables.GetFsmInt("geoAmount").Value;
-
-                            CharmsRebalanced.LogMessage(
-                                $"'{fsm.gameObject.name}' in state '{state}' worth {amount}"
-                            );
-                            total += amount;
-                            GameObject.Destroy(fsm.gameObject);
-                        }
+                        CharmsRebalanced.LogMessage("adding geoS");
+                        total+=geoAmountSmall;
+                    } else if (go.name.Contains("Geo Med"))
+                    {
+                        CharmsRebalanced.LogMessage("adding geoM");
+                        total+=geoAmountMedium;
+                    } else if (go.name.Contains("Geo Large"))
+                    {
+                        CharmsRebalanced.LogMessage("adding geoL");
+                        total+=geoAmountLarge;
                     }
                 }
                 if (total > 0) HeroController.instance.AddGeoQuietly(total);
@@ -125,7 +122,6 @@ namespace CharmsRebalanced
             bool willFuryApply = PlayerData.instance.health <= 3;
             bool retval = (hasFuryEquipped && willFuryApply);
             if (furyForceActive) retval = true;
-            CharmsRebalanced.LogMessage($"furyApply {retval} {hasFuryEquipped} {willFuryApply}" );
             return retval;
         }
         private static bool furyForceActive = false;

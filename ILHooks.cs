@@ -8,6 +8,7 @@ using System.IO;
 using MonoMod.RuntimeDetour;
 using Modding;
 using Mono.Cecil;
+#nullable enable
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class AutoInit : Attribute {}
 // All IL hooks go here
@@ -74,14 +75,14 @@ namespace CharmsRebalanced
                 nop.Index++;
             }
         }
-        public static void Set(this ILContext il, int id, OpCode opCode, object operand)
+        public static void Set(this ILContext il, int id, OpCode opCode, object? operand)
         {
             ILCursor setc = new(il);
             setc.Goto(id);
             setc.Next.OpCode = opCode;
             setc.Next.Operand = operand;
         }
-        public static void PopEmit(this ILContext il, int id, OpCode opCode, object operand)
+        public static void PopEmit(this ILContext il, int id, OpCode opCode, object? operand)
         {
             ILCursor setc = new(il);
             setc.Goto(id + 1);
@@ -124,6 +125,16 @@ namespace CharmsRebalanced
             } while (!end);
             writer.Write(dump);
             writer.Close();
+        }
+        public static Action<int,OpCode,object?> GetSafeEmit(this ILContext il){
+            int offset=0;
+            ILCursor cursor=new(il);
+            void Emit(int index, OpCode opcode, object? operand=null){
+                cursor.Goto(index+offset);
+                cursor.Emit(opcode,operand);
+                offset++;
+            };
+            return Emit;
         }
     }
     [AutoInit]
@@ -223,7 +234,7 @@ namespace CharmsRebalanced
     [AutoInit]
     public static class StalwartShellDelegateExtraIFrames
     {
-        private static ILHook thisHook;
+        private static ILHook? thisHook;
         public static void Enable()
         {
             if (CharmsRebalanced.Config.PatchesEnabled["stalwart"])
@@ -239,7 +250,7 @@ namespace CharmsRebalanced
         }
         public static void Disable()
         {
-            thisHook.Dispose();
+            thisHook?.Dispose();
             thisHook = null;
         }
         public static void Patch(ILContext il)
@@ -257,7 +268,7 @@ namespace CharmsRebalanced
     [AutoInit]
     public static class FragileHeartHealthUp
     {
-        static private ILHook hook;
+        static private ILHook? hook;
         public static void Enable()
         {
             if (CharmsRebalanced.Config.PatchesEnabled["fragile_heart"])
@@ -273,6 +284,33 @@ namespace CharmsRebalanced
         public static void Patch(ILContext il)
         {
             il.Set(30, OpCodes.Ldc_I4_3, null);
+        }
+    }
+    [AutoInit]
+    public static class GrubsongSoulPerMask
+    {
+        public static void Enable()
+        {
+            IL.HeroController.TakeDamage+=Patch;
+        }
+        public static void Disable()
+        {
+            IL.HeroController.TakeDamage -= Patch;
+        }
+        public static void Patch(ILContext il)
+        {
+            MethodInfo multDelegate=ReflectionHelper.GetMethodInfo(typeof(GrubsongSoulPerMask),"MultDelegate",false);
+            Action<int,OpCode,object?> SafeEmit=il.GetSafeEmit();
+            SafeEmit(321,OpCodes.Ldarg, 3);
+            SafeEmit(321,OpCodes.Call, multDelegate);
+            SafeEmit(326,OpCodes.Ldarg, 3);
+            SafeEmit(326,OpCodes.Call, multDelegate);
+        }
+        public static int MultDelegate(int soulAmt,int damageAmt)
+        {
+            damageAmt=PlayerData.instance.GetBool("overcharmed")?damageAmt*2:damageAmt;
+            int retval=soulAmt*damageAmt;
+            return retval;
         }
     }
 }
